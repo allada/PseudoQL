@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>PsudoQL Proof of Concept Page</title>
+        <script type="application/javascript" src="classes/pql.js"></script>
+        <script type="application/javascript" src="classes/pql/parser.js"></script>
+        <script type="application/javascript" src="classes/pql/opcodes.js"></script>
+
+        <script type="application/javascript" src="classes/pql/opcodes/opcode.js"></script>
+        
+        <script type="application/javascript" src="classes/pql/opcodes/seperators.js"></script>
+        <script type="application/javascript" src="classes/pql/opcodes/seperator.js"></script>
+
+
+        <script type="application/javascript" src="classes/pql/opcodes/and.js"></script>
+        <script type="application/javascript" src="classes/pql/opcodes/or.js"></script>
+
+        <script type="application/javascript" src="classes/pql/opcodes/constant.js"></script>
+
+        <script type="application/javascript" src="classes/pql/opcodes/comparitor.js"></script>
+        
+        <script type="application/javascript" src="classes/pql/opcodes/equal.js"></script>
+        <script type="application/javascript" src="classes/pql/opcodes/like.js"></script>
+        <script type="application/javascript" src="classes/pql/opcodes/greater_than.js"></script>
+        <script type="application/javascript" src="classes/pql/opcodes/less_than.js"></script>
+        <script type="application/javascript" src="classes/pql/opcodes/not_equal.js"></script>
+        <script type="application/javascript" src="classes/pql/opcodes/not_in.js"></script>
+        <script type="application/javascript" src="classes/pql/opcodes/not_like.js"></script>
+        <script type="application/javascript" src="classes/pql/opcodes/in.js"></script>
+        <script type="application/javascript" src="classes/pql/opcodes/no_value.js"></script>
+
+        <script type="application/javascript" src="classes/pql/opcodes/field.js"></script>
+        <script type="application/javascript" src="classes/pql/opcodes/function.js"></script>
+        <script type="application/javascript" src="classes/pql/opcodes/group.js"></script>
+        <script type="application/javascript" src="classes/pql/opcodes/null.js"></script>
+        
+        <script type="application/javascript" src="classes/pql/parser/table_ref.js"></script>
+        <script type="application/javascript" src="classes/pql/parser/sql_builder.js"></script>
+
+        <script type="application/javascript" src="database_map.js"></script>
+
+    </head>
+    <body>
+        <textarea id="psudoql" style="width:100%;height:300px"></textarea>
+        <textarea id="output" style="width:100%;height:300px"></textarea>
+        <script type="application/javascript">
+            (function (){
+                var psudoql_field = document.getElementById('psudoql'),
+                    output_field = document.getElementById('output');
+                psudoql_field.onkeyup = function (){
+                    var parsed_pql = new PQL.PARSER(psudoql_field.value, false, 'order', window.DB_SETTINGS);
+                    if(!parsed_pql.hasError()){
+                        console.log(parsed_pql.getCodes());
+                        try{
+                            output_field.value = (new PQL.PARSER.SQL_BUILDER(parsed_pql.getCodes())).toString();
+                        }catch(e){
+                            output_field.value = e.message || e;
+                        }
+                    }else{
+                        // Probably an error
+                        output_field.value = parsed_pql.getError();
+                    }
+                };
+            })();
+        </script>
+    </body>
+</html>
