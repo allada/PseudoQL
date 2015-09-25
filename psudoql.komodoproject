@@ -2,6 +2,14 @@
 <!-- Komodo Project File - DO NOT EDIT -->
 <project id="fb2df5a7-3197-744b-9c4f-91bd1cf06821" kpf_version="5" name="psudoql.komodoproject">
 <preference-set idref="fb2df5a7-3197-744b-9c4f-91bd1cf06821" id="project" preftype="project">
+  <boolean id="editUseLinting">0</boolean>
+  <string relative="path" id="import_dirname"></string>
+  <string id="last_local_directory">None</string>
+  <string id="last_remote_directory">None</string>
+  <string id="lessDefaultInterpreter">None</string>
+  <boolean id="lintJavaScript_SpiderMonkey">0</boolean>
   <long id="prefs_version">1</long>
+  <string id="sassDefaultInterpreter">None</string>
+  <string id="scssDefaultInterpreter">None</string>
 </preference-set>
 </project>

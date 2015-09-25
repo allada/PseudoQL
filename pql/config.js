@@ -1,157 +1,165 @@
-"use strict"
-window.DB_SETTINGS = {};
-window.DB_SETTINGS.TYPES = {
-    INT:        0,
-    TIMESTAMP:  1,
-    VARCHAR:    2
-};
-window.DB_SETTINGS.DB_MAP = {
+export class Config {
+    static ALL_ARGS (args) {
+        return args.join(', ');
+    };
+}
+Config.INT           = 0;
+Config.TIMESTAMP     = 1;
+Config.VARCHAR       = 2;
+
+Config.ARG1          = 0;
+Config.ARG2          = 1;
+Config.ARG3          = 2;
+Config.ARG4          = 3;
+Config.ARG5          = 4;
+Config.ARG6          = 5;
+Config.ARG7          = 6;
+Config.ARG8          = 7;
+Config.DB_MAP        = {
     order: {
         name: 'order',
         fields: {
             id: {
-                type: window.DB_SETTINGS.TYPES.INT,
+                type: Config.INT,
                 auto_inc: true,
                 zero_fill: false,
                 def: 'NULL',
                 size: 11,
-                nullable: false
+                nullable: false,
             },
             order_created: {
-                type: window.DB_SETTINGS.TYPES.TIMESTAMP,
+                type: Config.TIMESTAMP,
                 auto_inc: false,
                 zero_fill: false,
                 def: 'UNIX_TIMESTAMP',
                 size: null,
-                nullable: false
+                nullable: false,
             },
             customer_id: {
-                type: window.DB_SETTINGS.TYPES.INT,
+                type: Config.INT,
                 auto_inc: false,
                 zero_fill: false,
                 def: 'NULL',
                 size: 11,
-                nullable: true
-            }
+                nullable: true,
+            },
         },
         linkTo: {
-            customer: 'eq(customer_id;,customer.id;);'
+            customer: 'eq(customer_id;,customer.id;);',
         },
-        linkFrom: {}
+        linkFrom: {},
     },
     customer: {
         name: 'customer',
         fields: {
             id: {
-                type: window.DB_SETTINGS.TYPES.INT,
+                type: Config.INT,
                 auto_inc: true,
                 zero_fill: false,
                 def: 'NULL',
                 size: 11,
-                nullable: false
+                nullable: false,
             },
             name: {
-                type: window.DB_SETTINGS.TYPES.VARCHAR,
+                type: Config.VARCHAR,
                 auto_inc: false,
                 zero_fill: false,
                 def: "''",
                 size: 255,
-                nullable: false
-            }
+                nullable: false,
+            },
         },
         linkTo: {},
         linkFrom: {
-            orders: 'eq(order.id;,id;);'
-        }
-    }
+            orders: 'eq(order.id;,id;);',
+        },
+    },
 };
-window.DB_SETTINGS.ALL_ARGS_FUNC = function (args){
-    return args.join(', ');
-};
-window.DB_SETTINGS.FUNCTION_MAP = {
+
+Config.FUNCTION_MAP  = {
     eq: {
         min_args: 2,
         max_args: 2,
-        format: [0, ' = ', 1]
+        format: [Config.ARG1, ' = ', Config.ARG2],
     },
     gt: {
         min_args: 2,
         max_args: 2,
-        format: [0, ' > ', 1]
+        format: [Config.ARG1, ' > ', Config.ARG2],
     },
     lt: {
         min_args: 2,
         max_args: 2,
-        format: [0, ' < ', 1]
+        format: [Config.ARG1, ' < ', Config.ARG2],
     },
     ne: {
         min_args: 2,
         max_args: 2,
-        format: [0, ' != ', 1]
+        format: [Config.ARG1, ' != ', Config.ARG2],
     },
     like: {
         min_args: 2,
         max_args: 2,
-        format: [0, ' LIKE ', 1]
+        format: [Config.ARG1, ' LIKE ', function (args, orig_args){}],
     },
     not_like: {
         min_args: 2,
         max_args: 2,
-        format: [0, ' NOT LIKE ', 1]
+        format: [Config.ARG1, ' NOT LIKE ', Config.ARG2],
     },
     'in': {
         min_args: 1,
         max_args: Infinity,
-        format: ['IN(', window.DB_SETTINGS.ALL_ARGS_FUNC, ')']
+        format: ['IN(', Config.ALL_ARGS, ')'],
     },
     not_in: {
         min_args: 1,
         max_args: Infinity,
-        format: ['NOT IN(', window.DB_SETTINGS.ALL_ARGS_FUNC, ')']
+        format: ['NOT IN(', Config.ALL_ARGS, ')'],
     },
     length: {
         min_args: 1,
         max_args: 1,
-        format: ['LENGTH(', 0, ')']
+        format: ['LENGTH(', Config.ARG1, ')'],
     },
     concat: {
         min_args: 1,
         max_args: Infinity,
-        format: ['CONCAT(', window.DB_SETTINGS.ALL_ARGS_FUNC, ')']
+        format: ['CONCAT(', Config.ALL_ARGS, ')'],
     },
     lower: {
         min_args: 1,
         max_args: 1,
-        format: ['LOWER(', 0, ')']
+        format: ['LOWER(', Config.ARG1, ')'],
     },
     upper: {
         min_args: 1,
         max_args: 1,
-        format: ['UPPER(', 0, ')']
+        format: ['UPPER(', Config.ARG1, ')'],
     },
     substring: {
         min_args: 2,
         max_args: 3,
-        format: ['SUBSTRING(', window.DB_SETTINGS.ALL_ARGS_FUNC, ')']
+        format: ['SUBSTRING(', Config.ALL_ARGS, ')'],
     },
     trim: {
         min_args: 1,
         max_args: 2,
         format: {
-            1: ['TRIM(', 0, ')'],
-            2: ['TRIM(', 0, ' FROM ', 1, ')'],
-        }
+            1: ['TRIM(', Config.ARG1, ')'],
+            2: ['TRIM(', Config.ARG1, ' FROM ', Config.ARG2, ')'],
+        },
     },
     count: {
         min_args: 1,
         max_args: 1,
         is_group_function: true,
-        format: ['COUNT(', 0, ')']
+        format: ['COUNT(', Config.ARG1, ')'],
     },
     match: {
         min_args: 3,
         max_args: Infinity,
-        returns: window.DB_SETTINGS.TYPES.INT,
+        returns: Config.INT,
         format: function (args, orig_args){
             var against = args[0],
                 type = orig_args[1],
@@ -172,6 +180,7 @@ window.DB_SETTINGS.FUNCTION_MAP = {
             }else{
                 throw "Second argument of 'match' must be constant of 'BOOLEAN' or 'EXPANSION' or ''";
             }
+
             args = args.slice(2);
             for(var i=0;i<args.length;i++){
                 if(!(orig_args[i + 2] instanceof PQL.OPCODES.FIELD)){
@@ -180,6 +189,27 @@ window.DB_SETTINGS.FUNCTION_MAP = {
                 }
             }
             return ['MATCH(', args.join(','), ') AGAINST (', against, type, ')', ].join('')
-        }
-    }
+        },
+    },
 };
+
+import { EQUAL }        from  './opcodes/comparitors/equal.js';
+import { GREATER_THAN } from  './opcodes/comparitors/greater_than.js';
+import { IN }           from  './opcodes/comparitors/in.js';
+import { LESS_THAN }    from  './opcodes/comparitors/less_than.js';
+import { LIKE }         from  './opcodes/comparitors/like.js';
+import { NO_VALUE }     from  './opcodes/comparitors/no_value.js';
+import { NOT_EQUAL }    from  './opcodes/comparitors/not_equal.js';
+import { NOT_IN }       from  './opcodes/comparitors/not_in.js';
+import { NOT_LIKE }     from  './opcodes/comparitors/not_like.js';
+Config.COMPARITORS = new Set([
+    EQUAL,
+    GREATER_THAN,
+    IN,
+    LESS_THAN,
+    LIKE,
+    NO_VALUE,
+    NOT_EQUAL,
+    NOT_IN,
+    NOT_LIKE,
+]);
