@@ -13,7 +13,12 @@ export class CONSTANT extends OPCODE {
     getValue () {
         return this._value;
     }
-    getSQL () {
-        return "'" + this.getValue().replace(/([\\'])/, '\\$1') + "'";
+    getSQL (query_object, type_ref) {
+        let value = this.getValue();
+        if (type_ref && type_ref.is_numeric && /^-?(?:[0-9]+(?:\.[0-9]+)?|\.[0-9]+)$/.test(value)) {
+            return this.getValue().replace(/[^0-9.\-]+/, '');
+        } else {
+            return "'" + this.getValue().replace(/([\\'])/, '\\$1') + "%'";
+        }
     }
 }

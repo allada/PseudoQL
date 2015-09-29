@@ -8,15 +8,16 @@ import { NULL }         from './opcodes/null.js';
 import { OR }           from './opcodes/or.js';
 import { SEPERATOR }    from './opcodes/seperator.js';
 import { SEPERATORS }   from './opcodes/seperators.js';
-import { NO_VALUE }    from './opcodes/comparitors/no_value.js';
+import { NO_VALUE }     from './opcodes/comparitors/no_value.js';
 import { TABLE_REF }    from './parser/table_ref.js';
 
 export class PARSER {
-    constructor (query, ref_table, allow_seperator = false, config = null) {
+    constructor (query, ref_table, allow_seperator = false, config = null, table_refs = []) {
         this._hasError      = false;
         this._error         = null;
         this._codes         = null;
         this._comparitors   = new COMPARITORS(config.COMPARITORS);
+        this._table_refs    = table_refs;
 
         // Defaults to false
         allow_seperator     = !!allow_seperator;
@@ -114,7 +115,13 @@ export class PARSER {
         }
         str = str.substring(match[0].length);
         if (!table_ref) {
-            table_ref = new TABLE_REF(this, match[1]);
+            let refs = this._table_refs.slice(0);
+            refs.push(match[1]);
+            table_ref = new TABLE_REF(this, refs[0]);
+            // Start at one because first one already done
+            for (let i = 1; i < refs.length; i++) {
+                table_ref.appendRef(refs[i]);
+            }
         } else {
             table_ref.appendRef(match[1]);
         }
@@ -134,7 +141,7 @@ export class PARSER {
         }
         return [
             match[0].length + sub_ref[0],
-            sub_ref
+            sub_ref[1]
         ];
     }
 
@@ -145,10 +152,13 @@ export class PARSER {
         let next_char = str.substr(0, 1);
         // NULL is unique and is a solid hyphen
         if (next_char == '-') {
-            return [
-                1,
-                new NULL()
-            ];
+            let following_char = str.substr(1, 1);
+            if (following_char.length == 0 || /[^a-zA-Z0-9_\-.]/.test(following_char)) {
+                return [
+                    1,
+                    new NULL()
+                ];
+            }
         }
 
         let match;
@@ -169,7 +179,7 @@ export class PARSER {
                 data = match[1].replace(/\\([\x00-\xFF])/, '$1');
                 break;
             default:
-                match = str.match(/([a-zA-Z0-9_]+)/);
+                match = str.match(/([a-zA-Z0-9_\-.]+)/);
                 if (!match) {
                     return false;
                 }
@@ -189,6 +199,15 @@ export class PARSER {
         let match = str.match(/^[a-zA-Z0-9_]+/);
         if (!match) {
             return false;
+        }
+        if (!table_ref) {
+            if (this._table_refs.length) {
+                table_ref = new TABLE_REF(this, this._table_refs[0]);
+                // Start at one because first one already done
+                for (let i = 1; i < this._table_refs.length; i++) {
+                    table_ref.appendRef(this._table_refs[i]);
+                }
+            }
         }
 
         let field = new FIELD(this, match[0], table_ref);

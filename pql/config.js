@@ -3,9 +3,15 @@ export class Config {
         return args.join(', ');
     };
 }
-Config.INT           = 0;
-Config.TIMESTAMP     = 1;
-Config.VARCHAR       = 2;
+Config.INT           = {
+    is_numeric: true,
+};
+Config.TIMESTAMP     = {
+    is_numeric: false,
+};
+Config.VARCHAR       = {
+    is_numeric: false,
+};
 
 Config.ARG1          = 0;
 Config.ARG2          = 1;
@@ -17,7 +23,7 @@ Config.ARG7          = 6;
 Config.ARG8          = 7;
 Config.DB_MAP        = {
     order: {
-        name: 'order',
+        name: 'orders',
         fields: {
             id: {
                 type: Config.INT,
@@ -45,14 +51,25 @@ Config.DB_MAP        = {
             },
         },
         linkTo: {
-            customer: 'eq(customer_id;,customer.id;);',
+            customer: {
+                table: 'customer',
+                psudoql: 'eq(customer_id;,customer.id;);',
+            },
         },
         linkFrom: {},
     },
     customer: {
-        name: 'customer',
+        name: 'customers',
         fields: {
             id: {
+                type: Config.INT,
+                auto_inc: true,
+                zero_fill: false,
+                def: 'NULL',
+                size: 11,
+                nullable: false,
+            },
+            asdf: {
                 type: Config.INT,
                 auto_inc: true,
                 zero_fill: false,
@@ -71,7 +88,10 @@ Config.DB_MAP        = {
         },
         linkTo: {},
         linkFrom: {
-            orders: 'eq(order.id;,id;);',
+            orders: {
+                table: 'order',
+                psudoql: 'eq(orders.order_created;,asdf;);',
+            },
         },
     },
 };
