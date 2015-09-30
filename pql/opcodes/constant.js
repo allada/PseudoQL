@@ -18,7 +18,10 @@ export class CONSTANT extends OPCODE {
         if (type_ref && type_ref.is_numeric && /^-?(?:[0-9]+(?:\.[0-9]+)?|\.[0-9]+)$/.test(value)) {
             return this.getValue().replace(/[^0-9.\-]+/, '');
         } else {
-            return "'" + this.getValue().replace(/([\\'])/, '\\$1') + "%'";
+            return "'" + this.getValue().replace(/([\\'])/, '\\$1') + "'";
         }
+    }
+    isConstant () {
+        return true;
     }
 }

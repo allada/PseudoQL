@@ -4,9 +4,11 @@ export class FUNCTION extends OPCODE {
     constructor (pql_obj, fn_name) {
         super(pql_obj, fn_name);
 
+        this._needs_group_cache = null;
         this.setFunctionName(fn_name);
     }
     setArgs (args) {
+        this._needs_group_cache = null;
         this._arguments = args;
         return this;
     }
@@ -23,11 +25,15 @@ export class FUNCTION extends OPCODE {
         return this._fn_settings.format;
     }
     setFunctionName (fn_name) {
+        this._needs_group_cache = null;
         if (!this.getPqlObj().getConfig().FUNCTION_MAP || !this.getPqlObj().getConfig().FUNCTION_MAP[fn_name]) {
             throw `Function '${fn_name}' is not allowed or not defined`;
         }
         this._fn_settings = this.getPqlObj().getConfig().FUNCTION_MAP[fn_name];
         this._fn_name = fn_name;
+    }
+    getFunctionSettings () {
+        return this._fn_settings;
     }
     getSQL (query_obj) {
         let args = [];
@@ -36,6 +42,20 @@ export class FUNCTION extends OPCODE {
             args.push(v.getSQL(query_obj));
         });
         return FUNCTION.buildFromFormat(this.getFormat(), args, this._arguments);
+    }
+    needsGroup () {
+        if (this._needs_group_cache !== null) {
+            return this._needs_group_cache;
+        }
+        if (this.getFunctionSettings().is_group_function) {
+            return this._needs_group_cache = true;
+        }
+        for (let op_code of this._arguments) {
+            if (op_code.needsGroup()) {
+                return this._needs_group_cache = true;
+            }
+        }
+        return this._needs_group_cache = false;
     }
     static buildFromFormat (format_arg, args, orig_args) {
         let out = [];
@@ -48,6 +68,15 @@ export class FUNCTION extends OPCODE {
                 // Break does not need to go here because it needs to continue to 'object' section
                 format_arg = [format_arg];
             case 'object':
+                // Check if is not array type
+                if (!(format_arg instanceof Array)) {
+                    if (format_arg[args.length] !== undefined) {
+                        return this.buildFromFormat(format_arg[args.length], args, orig_args);
+                    } else {
+                        throw `Could not find ${ format_arg[args.length] } in format config for function`;
+                    }
+                }
+                
                 for (let format of format_arg) {
                     switch(typeof format){
                         case 'string':
@@ -65,7 +94,7 @@ export class FUNCTION extends OPCODE {
                             break;
                         case 'object':
                             if (format[args.length]) {
-                                return PQL.OPCODES.FUNCTION.buildFromFormat(format[args.length], args);
+                                return this.buildFromFormat(format[args.length], args);
                             } else {
                                 throw `Format '${JSON.stringify(format)}' does not have key of '${args.length}'`;
                             }

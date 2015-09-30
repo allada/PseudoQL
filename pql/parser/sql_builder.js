@@ -30,9 +30,13 @@ export class SQL_BUILDER {
         return this.getQuery().getConfig().DB_MAP[this.getTable()].name;
     }
     toString () {
-        let query_str = this.getQuery().getCodes().getSQL(this);
+        let query_str = this.getQuery().getWhereCodes().getSQL(this);
         if (query_str) {
             query_str = ' WHERE ' + query_str;
+        }
+        let having_str = this.getQuery().getHavingCodes().getSQL(this);
+        if (having_str) {
+            having_str = ' HAVING ' + having_str;
         }
         let group_str = this.getGroup().getCodes().getSQL(this);
         if (group_str) {
@@ -60,7 +64,7 @@ export class SQL_BUILDER {
                 join_str = ' ' + join_ary.join(' ');
             }
         }
-        return 'SELECT ' + selects.join(', ') + ' FROM ' + this.getTableName() + join_str + query_str + group_str + order_by_str;
+        return 'SELECT ' + selects.join(', ') + ' FROM ' + this.getTableName() + join_str + query_str + group_str + having_str + order_by_str;
     }
     _addTableLink (table_ary) {
         let table_str = this.constructor.tableArrayToString(table_ary);

@@ -3,16 +3,24 @@ export class Config {
         return args.join(', ');
     };
 }
-Config.INT           = {
+/* Database types */
+Config.NUMERIC       = {
     is_numeric: true,
 };
-Config.TIMESTAMP     = {
+Config.DATE          = {
     is_numeric: false,
 };
-Config.VARCHAR       = {
+Config.STRING        = {
+    is_numeric: false,
+};
+Config.BOOLEAN       = {
+    is_numeric: true,
+};
+Config.ANY_TYPE      = {
     is_numeric: false,
 };
 
+/* These are to make it easier to read the code for the function definitions */
 Config.ARG1          = 0;
 Config.ARG2          = 1;
 Config.ARG3          = 2;
@@ -26,28 +34,13 @@ Config.DB_MAP        = {
         name: 'orders',
         fields: {
             id: {
-                type: Config.INT,
-                auto_inc: true,
-                zero_fill: false,
-                def: 'NULL',
-                size: 11,
-                nullable: false,
+                type: Config.NUMERIC,
             },
             order_created: {
-                type: Config.TIMESTAMP,
-                auto_inc: false,
-                zero_fill: false,
-                def: 'UNIX_TIMESTAMP',
-                size: null,
-                nullable: false,
+                type: Config.DATE,
             },
             customer_id: {
-                type: Config.INT,
-                auto_inc: false,
-                zero_fill: false,
-                def: 'NULL',
-                size: 11,
-                nullable: true,
+                type: Config.NUMERIC,
             },
         },
         linkTo: {
@@ -62,28 +55,13 @@ Config.DB_MAP        = {
         name: 'customers',
         fields: {
             id: {
-                type: Config.INT,
-                auto_inc: true,
-                zero_fill: false,
-                def: 'NULL',
-                size: 11,
-                nullable: false,
+                type: Config.NUMERIC,
             },
             asdf: {
-                type: Config.INT,
-                auto_inc: true,
-                zero_fill: false,
-                def: 'NULL',
-                size: 11,
-                nullable: false,
+                type: Config.NUMERIC,
             },
             name: {
-                type: Config.VARCHAR,
-                auto_inc: false,
-                zero_fill: false,
-                def: "''",
-                size: 255,
-                nullable: false,
+                type: Config.STRING,
             },
         },
         linkTo: {},
@@ -100,115 +78,363 @@ Config.FUNCTION_MAP  = {
     eq: {
         min_args: 2,
         max_args: 2,
+        return_type: Config.BOOLEAN,
         format: [Config.ARG1, ' = ', Config.ARG2],
     },
     gt: {
         min_args: 2,
         max_args: 2,
+        return_type: Config.BOOLEAN,
         format: [Config.ARG1, ' > ', Config.ARG2],
     },
     lt: {
         min_args: 2,
         max_args: 2,
+        return_type: Config.BOOLEAN,
         format: [Config.ARG1, ' < ', Config.ARG2],
     },
     ne: {
         min_args: 2,
         max_args: 2,
+        return_type: Config.BOOLEAN,
         format: [Config.ARG1, ' != ', Config.ARG2],
     },
     like: {
         min_args: 2,
         max_args: 2,
+        return_type: Config.BOOLEAN,
         format: [Config.ARG1, ' LIKE ', function (args, orig_args){}],
     },
     not_like: {
         min_args: 2,
         max_args: 2,
+        return_type: Config.BOOLEAN,
         format: [Config.ARG1, ' NOT LIKE ', Config.ARG2],
     },
     'in': {
         min_args: 1,
         max_args: Infinity,
+        return_type: Config.BOOLEAN,
         format: ['IN(', Config.ALL_ARGS, ')'],
     },
     not_in: {
         min_args: 1,
         max_args: Infinity,
+        return_type: Config.BOOLEAN,
         format: ['NOT IN(', Config.ALL_ARGS, ')'],
+    },
+
+    /* Standard SQL functions */
+    abs: {
+        min_args: 1,
+        max_args: 1,
+        return_type: Config.NUMERIC,
+        format: ['ABS(', Config.ARG1, ')'],
+    },
+    'char': {
+        min_args: 1,
+        max_args: Infinity,
+        return_type: Config.STRING,
+        format: ['CHAR(', Config.ALL_ARGS, ')'],
+    },
+    coalesce: {
+        min_args: 1,
+        max_args: 1,
+        return_type: Config.ANY_TYPE,
+        format: ['COALESCE(', Config.ARG1, ')'],
+    },
+    ifnull: {
+        min_args: 2,
+        max_args: 2,
+        return_type: Config.ANY_TYPE,
+        format: ['IFNULL(', Config.ARG1, ', ', Config.ARG2, ')'],
+    },
+    instr: {
+        min_args: 2,
+        max_args: 2,
+        return_type: Config.NUMERIC,
+        format: ['INSTR(', Config.ARG1, ', ', Config.ARG2, ')'],
+    },
+    hex: {
+        min_args: 1,
+        max_args: 1,
+        return_type: Config.STRING,
+        format: ['HEX(', Config.ARG1, ')'],
     },
     length: {
         min_args: 1,
         max_args: 1,
+        return_type: Config.NUMERIC,
         format: ['LENGTH(', Config.ARG1, ')'],
-    },
-    concat: {
-        min_args: 1,
-        max_args: Infinity,
-        format: ['CONCAT(', Config.ALL_ARGS, ')'],
     },
     lower: {
         min_args: 1,
         max_args: 1,
+        return_type: Config.STRING,
         format: ['LOWER(', Config.ARG1, ')'],
+    },
+    ltrim: {
+        min_args: 1,
+        max_args: 1,
+        return_type: Config.STRING,
+        format: ['LTRIM(', Config.ARG1, ')'],
+    },
+    nullif: {
+        min_args: 2,
+        max_args: 2,
+        return_type: Config.ANY_TYPE,
+        format: ['NULLIF(', Config.ARG1, ', ', Config.ARG2, ')'],
+    },
+    random: {
+        min_args: 0,
+        max_args: 0,
+        return_type: Config.NUMERIC,
+        format: ['RANDOM()'],
+    },
+    replace: {
+        min_args: 3,
+        max_args: 3,
+        return_type: Config.STRING,
+        format: ['REPLACE(', Config.ARG1, ', ', Config.ARG2, ', ', Config.ARG3, ')'],
+    },
+    round: {
+        min_args: 1,
+        max_args: 2,
+        return_type: Config.NUMERIC,
+        format: ['ROUND(', Config.ALL_ARGS, ')'],
+    },
+    rtrim: {
+        min_args: 1,
+        max_args: 1,
+        return_type: Config.STRING,
+        format: ['RTRIM(', Config.ARG1, ')'],
+    },
+    substr: {
+        min_args: 2,
+        max_args: 3,
+        return_type: Config.STRING,
+        format: ['SUBSTR(', Config.ALL_ARGS, ')'],
+    },
+    trim: {
+        min_args: 1,
+        max_args: 1,
+        return_type: Config.STRING,
+        format: ['TRIM(', Config.ARG1, ')'],
     },
     upper: {
         min_args: 1,
         max_args: 1,
+        return_type: Config.STRING,
         format: ['UPPER(', Config.ARG1, ')'],
     },
-    substring: {
-        min_args: 2,
-        max_args: 3,
-        format: ['SUBSTRING(', Config.ALL_ARGS, ')'],
+    upper: {
+        min_args: 1,
+        max_args: 1,
+        return_type: Config.STRING,
+        format: ['UPPER(', Config.ARG1, ')'],
     },
-    trim: {
+    concat: {
+        min_args: 1,
+        max_args: Infinity,
+        return_type: Config.STRING,
+        format: ['CONCAT(', Config.ALL_ARGS, ')'],
+    },
+
+    /* Date Functions */
+    date_format: {
+        min_args: 2,
+        max_args: 2,
+        return_type: Config.STRING,
+        format: ['DATE_FORMAT(', Config.ARG1, ', ', Config.ARG2,')'],
+    },
+    date: {
+        min_args: 1,
+        max_args: 1,
+        return_type: Config.DATE,
+        format: ['DATE(', Config.ARG1, ')'],
+    },
+    day: {
+        min_args: 1,
+        max_args: 1,
+        return_type: Config.NUMERIC,
+        format: ['DAY(', Config.ARG1, ')'],
+    },
+    from_unixtime: {
+        min_args: 1,
+        max_args: 1,
+        return_type: Config.DATE,
+        format: ['FROM_UNIXTIME(', Config.ARG1, ')'],
+    },
+    hour: {
+        min_args: 1,
+        max_args: 1,
+        return_type: Config.NUMERIC,
+        format: ['HOUR(', Config.ARG1, ')'],
+    },
+    hour: {
+        min_args: 1,
+        max_args: 1,
+        return_type: Config.NUMERIC,
+        format: ['HOUR(', Config.ARG1, ')'],
+    },
+    minute: {
+        min_args: 1,
+        max_args: 1,
+        return_type: Config.NUMERIC,
+        format: ['MINUTE(', Config.ARG1, ')'],
+    },
+    month: {
+        min_args: 1,
+        max_args: 1,
+        return_type: Config.NUMERIC,
+        format: ['MONTH(', Config.ARG1, ')'],
+    },
+    now: {
+        min_args: 0,
+        max_args: 0,
+        return_type: Config.DATE,
+        format: ['NOW()'],
+    },
+    second: {
+        min_args: 1,
+        max_args: 1,
+        return_type: Config.NUMERIC,
+        format: ['SECOND(', Config.ARG1, ')'],
+    },
+    time: {
+        min_args: 1,
+        max_args: 1,
+        return_type: Config.STRING,
+        format: ['TIME(', Config.ARG1, ')'],
+    },
+    unix_timestamp: {
+        min_args: 0,
+        max_args: 1,
+        return_type: Config.NUMERIC,
+        format: ['UNIX_TIMESTAMP(', Config.ALL_ARGS, ')'],
+    },
+    year: {
+        min_args: 1,
+        max_args: 1,
+        return_type: Config.NUMERIC,
+        format: ['YEAR(', Config.ARG1, ')'],
+    },
+
+    /* Aggregate functions */
+    avg: {
         min_args: 1,
         max_args: 2,
+        return_type: Config.NUMERIC,
+        is_group_function: true,
         format: {
-            1: ['TRIM(', Config.ARG1, ')'],
-            2: ['TRIM(', Config.ARG1, ' FROM ', Config.ARG2, ')'],
+            1: ['AVG(', Config.ARG1, ')'],
+            2: [(args, orig_args) => {
+                let distinct = Boolean(Number(orig_args[1].getValue()));
+                if (distinct) {
+                    return `AVG(DISTINCT ${ args[0] }`;
+                }
+                return `AVG(${ args[0] }`;
+            }],
         },
     },
     count: {
         min_args: 1,
-        max_args: 1,
+        max_args: 2,
+        return_type: Config.NUMERIC,
         is_group_function: true,
-        format: ['COUNT(', Config.ARG1, ')'],
+        format: {
+            1: ['COUNT(', Config.ARG1, ')'],
+            2: [(args, orig_args) => {
+                let distinct = Boolean(Number(orig_args[1].getValue()));
+                if (distinct) {
+                    return `COUNT(DISTINCT ${ args[0] }`;
+                }
+                return `COUNT(${ args[0] }`;
+            }],
+        },
     },
-    match: {
-        min_args: 3,
+    // group_concat(expr[,distinct[,seperator[,order_by_expression,order_by_direction ...]]]);
+    group_concat: {
+        min_args: 1,
         max_args: Infinity,
-        returns: Config.INT,
-        format: function (args, orig_args){
-            var against = args[0],
-                type = orig_args[1],
-                fields = [];
-            if(type instanceof PQL.OPCODES.NULL){
-                type = '';
-            }else if(type instanceof PQL.OPCODES.CONSTANT){
-                var type_value = type.getValue().toUpperCase();
-                if(type_value == 'BOOLEAN'){
-                    type = ' IN BOOLEAN MODE';
-                }else if(type_value == 'EXPANSION'){
-                    type = ' WITH QUERY EXPANSION';
-                }else if(type_value == '' || type_value instanceof PQL.OPCODES.NULL){
-                    type = '';
-                }else{
-                    throw "Second argument of 'match' must be constant of 'BOOLEAN' or 'EXPANSION' or ''";
+        return_type: Config.STRING,
+        is_group_function: true,
+        format: (args, orig_args) => {
+            let distinct = (orig_args.length >= 2) && Boolean(Number(orig_args[1].getValue())) ? 'DISTINCT ' : '';
+            let seperator;
+            if (orig_args.length >= 3) {
+                if (!orig_args[2].isConstant()) {
+                    throw `Third argument of "group_concat" function must be a constant type`;
                 }
-            }else{
-                throw "Second argument of 'match' must be constant of 'BOOLEAN' or 'EXPANSION' or ''";
+                seperator = ` SEPARATOR ${ args[2] }`;
             }
-
-            args = args.slice(2);
-            for(var i=0;i<args.length;i++){
-                if(!(orig_args[i + 2] instanceof PQL.OPCODES.FIELD)){
-                    // Remember to add 1 because array starts at 0 and field count starts at 1
-                    throw "Argument " + (i + 3) + " must be a field field in function 'match'";
+            let order_bys = new Set;
+            if (orig_args.length > 3) {
+                // Check to make sure there are always pairs of order_by_expression and order_by_direction
+                if (orig_args.length % 2 == 0) {
+                    throw `GROUP_CONCAT function must have order_by_expression and order_by_direction in pairs`
+                }
+                // Inc in order of 2's
+                for (let i = 3; i < args.length; i=i+2) {
+                    let dir = orig_args[i+1].getValue().toString().toLowerCase() == 'desc' ? 'DESC' : 'ASC';
+                    order_bys.add(`${ args[i] } ${ dir }`);
                 }
             }
-            return ['MATCH(', args.join(','), ') AGAINST (', against, type, ')', ].join('')
+            let order_by;
+            if (order_bys.size) {
+                order_by = ` ORDER BY ${ order_bys.values().join(', ') }`
+            } else {
+                order_by = '';
+            }
+            return `GROUP_CONCAT(${ distinct }${ args[0] }${ order_by }${ seperator })`;
+        },
+    },
+    max: {
+        min_args: 1,
+        max_args: 2,
+        return_type: Config.NUMERIC,
+        is_group_function: true,
+        format: {
+            1: ['MAX(', Config.ARG1, ')'],
+            2: [(args, orig_args) => {
+                let distinct = Boolean(Number(orig_args[1].getValue()));
+                if (distinct) {
+                    return `MAX(DISTINCT ${ args[0] }`;
+                }
+                return `MAX(${ args[0] }`;
+            }],
+        },
+    },
+    min: {
+        min_args: 1,
+        max_args: 2,
+        return_type: Config.NUMERIC,
+        is_group_function: true,
+        format: {
+            1: ['MIN(', Config.ARG1, ')'],
+            2: [(args, orig_args) => {
+                let distinct = Boolean(Number(orig_args[1].getValue()));
+                if (distinct) {
+                    return `MIN(DISTINCT ${ args[0] }`;
+                }
+                return `MIN(${ args[0] }`;
+            }],
+        },
+    },
+    sum: {
+        min_args: 1,
+        max_args: 2,
+        return_type: Config.NUMERIC,
+        is_group_function: true,
+        format: {
+            1: ['SUM(', Config.ARG1, ')'],
+            2: [(args, orig_args) => {
+                let distinct = Boolean(Number(orig_args[1].getValue()));
+                if (distinct) {
+                    return `SUM(DISTINCT ${ args[0] }`;
+                }
+                return `SUM(${ args[0] }`;
+            }],
         },
     },
 };

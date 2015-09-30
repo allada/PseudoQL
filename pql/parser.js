@@ -53,6 +53,52 @@ export class PARSER {
     getRefTable () {
         return this._ref_table;
     }
+    _getCodesOfGroup (need_group) {
+        let codes = this._codes;
+
+        if (codes instanceof GROUP) {
+            let group_codes = codes.getOpCodes();
+            let new_codes = [];
+            for (let code of group_codes) {
+                // If it has an OR just return all of them if in where
+                if (code instanceof OR) {
+                    if (need_group) {
+                        return codes;
+                    } else {
+                        return (new GROUP(this, [])).setNeedWrap(false);
+                    }
+                }
+                if (!!need_group == code.needsGroup()) {
+                    new_codes.push(code);
+                }
+            }
+            // Trims off any comparitors (ANDs and ORs) from beginning and end of codes
+            while (new_codes.length) {
+                if (new_codes[0] instanceof SEPERATORS) {
+                    new_codes.shift();
+                } else {
+                    break;
+                }
+            }
+            while (new_codes.length) {
+                if (new_codes[new_codes.length - 1] instanceof SEPERATORS) {
+                    new_codes.pop();
+                } else {
+                    break;
+                }
+            }
+            return (new GROUP(this, new_codes)).setNeedWrap(false);
+        }
+        return codes;
+    }
+
+    getWhereCodes () {
+        return this._getCodesOfGroup(false);
+    }
+
+    getHavingCodes () {
+        return this._getCodesOfGroup(true);
+    }
 
     getCodes () {
         return this._codes;

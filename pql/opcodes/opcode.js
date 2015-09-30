@@ -12,4 +12,13 @@ export class OPCODE {
     getPqlObj () {
         return this._pql_obj;
     }
+    isConstant () {
+        return false;
+    }
+    getValue () {
+        return null;
+    }
+    needsGroup () {
+        return false;
+    }
 }
