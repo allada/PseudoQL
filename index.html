@@ -4,38 +4,168 @@
         <title>PsudoQL Proof of Concept Page</title>
         <script src="https://google.github.io/traceur-compiler/bin/traceur.js"></script>
         <script src="https://google.github.io/traceur-compiler/src/bootstrap.js"></script>
+        <style type="text/css">
+            th {
+                width: 85px;
+                text-align:left;
+                font-size:12pt;
+            }
+            td, th{
+                vertical-align: top;
+            }
+            #select_table th, #select_table td {
+                font-size:12pt;
+                text-align:center;
+            }
+            body {
+                zoom: 2;
+            }
+        </style>
     </head>
     <body>
-        <textarea id="psudoql" style="width:100%;height:300px"></textarea>
-        <textarea id="output" style="width:100%;height:300px"></textarea>
+        <table border="0" width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+                <th>Query:</th>
+                <td><input type="text" id="query" style="width:300px;" value="sum(order_total)>500 customer.id!:- customer.name~John" /></td>
+            </tr>
+            <tr>
+                <th>Table:</th>
+                <td><select id="table"></select></td>
+            </tr>
+            <tr>
+                <th>Group By:</th>
+                <td><input type="text" id="group_by" style="width:300px;" /></td>
+            </tr>
+            <tr>
+                <th>Order By:</th>
+                <td><input type="text" id="order_by" style="width:300px;" /></td>
+            </tr>
+            <tr>
+                <th>Selects:</th>
+                <td><table border="0" cellpadding="0" cellspacing="0" id="select_table" width="308px">
+                    <tr>
+                        <th style="width:20%;">Name</th>
+                        <th style="width:65%;">Query</th>
+                        <td style="width:10%;"><input type="button" value="+" onclick="addSelects()" /></td>
+                    </tr>
+                    <tr>
+                        <th><input type="text" name="select_names[]" style="width:95%;" value="order_id" /></th>
+                        <th colspan="2"><input type="text" name="select_values[]" style="width:95%;" value="id" /></th>
+                    </tr>
+                    <tr>
+                        <th><input type="text" name="select_names[]" style="width:95%;" value="ship_info" /></th>
+                        <th colspan="2"><input type="text" name="select_values[]" style="width:95%;" value="concat(customer.name, '\n', customer.address1, if(customer.address2, concat('\n', customer.address2)), '\n', customer.city, ' ', customer.state, ' ', customer.postalcode)" /></th>
+                    </tr>
+                    <tr>
+                        <th><input type="text" name="select_names[]" style="width:95%;" value="total" /></th>
+                        <th colspan="2"><input type="text" name="select_values[]" style="width:95%;" value="sum(order_total)" /></th>
+                    </tr>
+                </table></td>
+            </tr>
+            <tr>
+                <td colspan="2"><hr /></td>
+            </tr>
+            <tr>
+                <th style="height:200px;">Output:</th>
+                <td><textarea id="output_query" style="width:80%;height:300px;" readonly="readonly"></textarea></td>
+            </tr>
+        </table>
+        <!-- <textarea id="psudoql" style="width:100%;height:300px"></textarea>
+        <textarea id="output" style="width:100%;height:300px"></textarea> -->
         <script type="module">
             import { PQL } from './pql/PQL.js';
             import { Config } from './pql/config.js';
-            (() => {
+
+            window.addSelects = () => {
+                var select_table = document.getElementById('select_table');
+                var tr = select_table.appendChild(document.createElement('tr'));
+                var td1 = tr.appendChild(document.createElement('td'));
+                var td2 = tr.appendChild(document.createElement('td'));
+
+                var input1 = td1.appendChild(document.createElement('input'));
+                var input2 = td2.appendChild(document.createElement('input'));
+
+                input1.type = 'text';
+                input1.name = 'select_names[]';
+                input1.style.width = '95%';
+
+                input2.type = 'text';
+                input2.name = 'select_values[]';
+                input2.style.width = '95%';
+
+                td2.colSpan = 2;
+
                 PQL.setDefaultConfig(Config);
 
-                let psudoql_field   = document.getElementById('psudoql');
-                let output_field    = document.getElementById('output');
+                var output_query_el = document.getElementById('output_query');
 
-                psudoql_field.onkeyup = function () {
+                var query_el    = document.getElementById('query');
+                var table_el    = document.getElementById('table');
+                var group_by_el = document.getElementById('group_by');
+                var order_by_el = document.getElementById('order_by');
+
+                var select_names = document.getElementsByName('select_names[]');
+                var select_values = document.getElementsByName('select_values[]');
+
+                let eventFn = function () {
                     try {
+                        let fields = {};
+                        for (let i of Object.keys(select_names)) {
+                            fields[select_names[i].value] = select_values[i].value;
+                        }
                         let query = PQL.getSQL({
-                            query: psudoql_field.value,
-                            table: 'order',
-                            group: 'id;',
-                            selects: {
-                                id: 'id;'
-                            },
-                            orderBy: 'id;'
+                            query: query_el.value,
+                            table: table_el.value,
+                            group: group_by_el.value,
+                            selects: fields,
+                            orderBy: order_by_el.value,
                         });
                         console.log(query);
-                        output_field.value = query;
+                        output_query_el.value = query;
                     } catch (e) {
-                        output_field.value = e.message || e;
+                        output_query_el.value = e.message || e;
                         return;
                     }
                 };
-            })();
+
+                let listenerObjects = new Set;
+                listenerObjects.add(query_el);
+                listenerObjects.add(table_el);
+                listenerObjects.add(group_by_el);
+                listenerObjects.add(order_by_el);
+
+                for (let i of Object.keys(select_names)) {
+                    listenerObjects.add(select_names[i]);
+                    listenerObjects.add(select_values[i]);
+                }
+
+                listenerObjects.forEach((v, k) => {
+                    v.removeEventListener('change', eventFn);
+                    v.addEventListener('change', eventFn);
+                    v.removeEventListener('keyup', eventFn);
+                    v.addEventListener('keyup', eventFn);
+                    v.removeEventListener('paste', eventFn);
+                    v.addEventListener('paste', eventFn);
+                    v.removeEventListener('input', eventFn);
+                    v.addEventListener('input', eventFn);
+                });
+
+                let table_field     = document.getElementById('table');
+
+                while (table_field.firstChild) {
+                    table_field.removeChild(table_field.firstChild);
+                }
+                for (let i in Config.DB_MAP) {
+                    if (Config.DB_MAP.hasOwnProperty(i)) {
+                        let option = document.createElement('option');
+                        option.value = i;
+                        option.appendChild(document.createTextNode(i));
+                        table_field.appendChild(option);
+                    }
+                }
+                eventFn();
+            };
+            window.addSelects();
         </script>
     </body>
 </html>

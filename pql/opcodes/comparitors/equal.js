@@ -1,4 +1,5 @@
 import { COMPARITOR } from './comparitor.js';
+import { NULL } from './../null.js';
 
 export class EQUAL extends COMPARITOR {
     static set comparitors (v) {}
@@ -14,6 +15,10 @@ export class EQUAL extends COMPARITOR {
         if (this.right.getType) {
             right_type = this.right.getType();
         }
-        return this.left.getSQL(query_object, right_type) + ' = ' + this.right.getSQL(query_object, left_type);
+        if (this.right instanceof NULL) {
+            return this.left.getSQL(query_object, right_type) + ' IS NULL';
+        } else {
+            return this.left.getSQL(query_object, right_type) + ' = ' + this.right.getSQL(query_object, left_type);
+        }
     }
 }

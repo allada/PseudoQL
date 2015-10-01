@@ -26,6 +26,7 @@ export class FUNCTION extends OPCODE {
     }
     setFunctionName (fn_name) {
         this._needs_group_cache = null;
+        fn_name = fn_name.toLowerCase();
         if (!this.getPqlObj().getConfig().FUNCTION_MAP || !this.getPqlObj().getConfig().FUNCTION_MAP[fn_name]) {
             throw `Function '${fn_name}' is not allowed or not defined`;
         }

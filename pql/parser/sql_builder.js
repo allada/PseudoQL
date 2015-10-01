@@ -32,26 +32,29 @@ export class SQL_BUILDER {
     toString () {
         let query_str = this.getQuery().getWhereCodes().getSQL(this);
         if (query_str) {
-            query_str = ' WHERE ' + query_str;
+            query_str = '\nWHERE\n\t' + query_str;
         }
         let having_str = this.getQuery().getHavingCodes().getSQL(this);
         if (having_str) {
-            having_str = ' HAVING ' + having_str;
+            having_str = '\nHAVING\n\t' + having_str;
         }
         let group_str = this.getGroup().getCodes().getSQL(this);
         if (group_str) {
-            group_str = ' GROUP BY ' + group_str;
+            group_str = '\nGROUP BY\n\t' + group_str;
         }
         let selects = [];
         this.getSelects().forEach((v, k) => {
-            selects.push(v.getCodes().getSQL(this) + ' AS ' + k);
+            let val = v.getCodes().getSQL(this) + ((k) ? ' AS ' + k : '');
+            if (val) {
+                selects.push(val);
+            }
         });
         if (!selects.length) {
             selects.push('*');
         }
         let order_by_str = this.getOrderBy().getCodes().getSQL(this);
         if (order_by_str) {
-            order_by_str = ' ORDER BY ' + order_by_str;
+            order_by_str = '\nORDER BY\n\t' + order_by_str;
         }
 
         let join_str = '';
@@ -61,10 +64,10 @@ export class SQL_BUILDER {
                 join_ary.push(`LEFT JOIN ${ table_ref.table_obj.name } AS ${ table_ref.alias } ON ${ table_ref.parser.getCodes().getSQL(this) }`);
             }
             if (join_ary.length) {
-                join_str = ' ' + join_ary.join(' ');
+                join_str = '\n\t' + join_ary.join('\n\t');
             }
         }
-        return 'SELECT ' + selects.join(', ') + ' FROM ' + this.getTableName() + join_str + query_str + group_str + having_str + order_by_str;
+        return 'SELECT\n\t' + selects.join(',\n\t') + '\nFROM ' + this.getTableName() + join_str + query_str + group_str + having_str + order_by_str;
     }
     _addTableLink (table_ary) {
         let table_str = this.constructor.tableArrayToString(table_ary);

@@ -1,6 +1,10 @@
 import { OPCODE } from './../opcode.js';
 
 export class COMPARITOR extends OPCODE {
+    constructor () {
+        super (...arguments);
+        this._needs_group_cache = null;
+    }
     get left () {
         return this._left;
     }
@@ -21,5 +25,21 @@ export class COMPARITOR extends OPCODE {
     setRight (v) {
         this.right = v;
         return this;
+    }
+    needsGroup () {
+        if (this._needs_group_cache !== null) {
+            return this._needs_group_cache;
+        }
+        if (this.left) {
+            if (this.left.needsGroup()) {
+                return this._needs_group_cache = true;
+            }
+        }
+        if (this.right) {
+            if (this.right.needsGroup()) {
+                return this._needs_group_cache = true;
+            }
+        }
+        return this._needs_group_cache = false;
     }
 }

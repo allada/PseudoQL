@@ -10,12 +10,12 @@ export class PQL {
     }
 
     static getSQL ({ query, table, group, selects, orderBy }) {
-        let query_parser = new PARSER(query, table, false, this.defaultConfig);
+        var query_parser = new PARSER(query, table, false, this.defaultConfig);
         if (query_parser.hasError()) {
             throw query_parser.getError();
         }
 
-        let group_parser = new PARSER(group, table, true, this.defaultConfig);
+        var group_parser = new PARSER(group, table, true, this.defaultConfig);
         if (group_parser.hasError()) {
             throw group_parser.getError();
         }
@@ -31,7 +31,11 @@ export class PQL {
             }
         }
 
-        let order_by_parser = new PARSER(orderBy, table, false, this.defaultConfig);
+        if (!select_parsers.size) {
+            throw "Must have at least 1 select";
+        }
+
+        var order_by_parser = new PARSER(orderBy, table, true, this.defaultConfig);
         if (order_by_parser.hasError()) {
             throw order_by_parser.getError();
         }

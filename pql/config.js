@@ -42,6 +42,9 @@ Config.DB_MAP        = {
             customer_id: {
                 type: Config.NUMERIC,
             },
+            order_total: {
+                type: Config.NUMERIC,
+            },
         },
         linkTo: {
             customer: {
@@ -57,10 +60,22 @@ Config.DB_MAP        = {
             id: {
                 type: Config.NUMERIC,
             },
-            asdf: {
-                type: Config.NUMERIC,
-            },
             name: {
+                type: Config.STRING,
+            },
+            address1: {
+                type: Config.STRING,
+            },
+            address2: {
+                type: Config.STRING,
+            },
+            city: {
+                type: Config.STRING,
+            },
+            state: {
+                type: Config.STRING,
+            },
+            postalcode: {
                 type: Config.STRING,
             },
         },
@@ -68,7 +83,7 @@ Config.DB_MAP        = {
         linkFrom: {
             orders: {
                 table: 'order',
-                psudoql: 'eq(orders.order_created;,asdf;);',
+                psudoql: 'eq(orders.customer_id;,id;);',
             },
         },
     },
@@ -122,6 +137,12 @@ Config.FUNCTION_MAP  = {
         max_args: Infinity,
         return_type: Config.BOOLEAN,
         format: ['NOT IN(', Config.ALL_ARGS, ')'],
+    },
+    'if': {
+        min_args: 3,
+        max_args: 3,
+        return_type: Config.ANY,
+        format: ['IF(', Config.ALL_ARGS, ')'],
     },
 
     /* Standard SQL functions */
