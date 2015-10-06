@@ -18,7 +18,7 @@
                 text-align:center;
             }
             body {
-                zoom: 2;
+                zoom: 1.5;
             }
         </style>
     </head>
@@ -92,6 +92,11 @@
             import { PQL } from './pql/PQL.js';
             import { Config } from './pql/config.js';
             (() => {
+                class EmptyString {
+                    toString () {
+                        return '';
+                    }
+                }
                 let output_query_el, query_el, table_el, group_by_el, select_names, select_values, order_dirs, order_values;
 
                 function refreshMappings () {
@@ -152,7 +157,7 @@
                     try {
                         let fields = {};
                         for (let i of Object.keys(select_names)) {
-                            fields[select_names[i].value === '' ? Symbol() : select_names[i].value] = select_values[i].value;
+                            fields[select_names[i].value === '' ? new EmptyString() : select_names[i].value] = select_values[i].value;
                         }
     
                         let orders = {};

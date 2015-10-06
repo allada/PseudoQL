@@ -24,13 +24,23 @@ export class PQL {
         }
 
         let select_parsers = new Map();
-        for (let k in selects) {
-            if (selects.hasOwnProperty(k)) {
-                let v = new PARSER(selects[k], table, false, this.defaultConfig);
-                if (v.hasError()) {
-                    throw v.getError();
+        if (selects instanceof Map) {
+            selects.forEach((v, k) => {
+                let val = new PARSER(v, table, false, this.defaultConfig);
+                if (val.hasError()) {
+                    throw val.getError();
                 }
-                select_parsers.set(k, v);
+                select_parsers.set(k, val);
+            });
+        } else {
+            for (let k in selects) {
+                if (selects.hasOwnProperty(k)) {
+                    let v = new PARSER(selects[k], table, false, this.defaultConfig);
+                    if (v.hasError()) {
+                        throw v.getError();
+                    }
+                    select_parsers.set(k, v);
+                }
             }
         }
 
@@ -39,13 +49,24 @@ export class PQL {
         }
 
         let order_by_parsers = new Map();
-        for (let k in orderBys) {
-            if (orderBys.hasOwnProperty(k)) {
-                let v = new PARSER(k, table, false, this.defaultConfig);
-                if (v.hasError()) {
-                    throw v.getError();
+        if (orderBys instanceof Map) {
+            orderBys.forEach((v, k) => {
+                // This one is backwards... be warned that k is the string v is the [desc, asc]
+                let val = new PARSER(k, table, false, this.defaultConfig);
+                if (val.hasError()) {
+                    throw val.getError();
                 }
-                order_by_parsers.set(v, orderBys[k]);
+                order_by_parsers.set(val, v);
+            });
+        } else {
+            for (let k in orderBys) {
+                if (orderBys.hasOwnProperty(k)) {
+                    let v = new PARSER(k, table, false, this.defaultConfig);
+                    if (v.hasError()) {
+                        throw v.getError();
+                    }
+                    order_by_parsers.set(v, orderBys[k]);
+                }
             }
         }
 
