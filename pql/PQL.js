@@ -8,9 +8,6 @@ export class PQL {
     static set defaultConfig (v) {
         PQL._defaultConfig = v;
     }
-    static getSuggestions({ query, table, extras = [], allow_seperator = false }) {
-        
-    }
 
     static getSQL ({ query, table, group, selects, orderBys }) {
         var query_parser = new PARSER(query, table, false, this.defaultConfig);
