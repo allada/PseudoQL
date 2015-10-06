@@ -8,8 +8,11 @@ export class PQL {
     static set defaultConfig (v) {
         PQL._defaultConfig = v;
     }
+    static getSuggestions({ query, table, extras = [], allow_seperator = false }) {
+        
+    }
 
-    static getSQL ({ query, table, group, selects, orderBy }) {
+    static getSQL ({ query, table, group, selects, orderBys }) {
         var query_parser = new PARSER(query, table, false, this.defaultConfig);
         if (query_parser.hasError()) {
             throw query_parser.getError();
@@ -35,9 +38,15 @@ export class PQL {
             throw "Must have at least 1 select";
         }
 
-        var order_by_parser = new PARSER(orderBy, table, true, this.defaultConfig);
-        if (order_by_parser.hasError()) {
-            throw order_by_parser.getError();
+        let order_by_parsers = new Map();
+        for (let k in orderBys) {
+            if (orderBys.hasOwnProperty(k)) {
+                let v = new PARSER(k, table, false, this.defaultConfig);
+                if (v.hasError()) {
+                    throw v.getError();
+                }
+                order_by_parsers.set(v, orderBys[k]);
+            }
         }
 
         let sb = new SQL_BUILDER({
@@ -45,7 +54,7 @@ export class PQL {
             table: table,
             group: group_parser,
             selects: select_parsers,
-            orderBy: order_by_parser,
+            orderBys: order_by_parsers,
         });
         return sb.toString();
     }

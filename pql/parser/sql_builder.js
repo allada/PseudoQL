@@ -1,11 +1,11 @@
 import { PARSER } from './../parser.js';
 export class SQL_BUILDER {
-    constructor ({ query, table, group, selects, orderBy }) {
+    constructor ({ query, table, group, selects, orderBys }) {
         this._query = query;
         this._table = table;
         this._group = group;
         this._selects = selects;
-        this._orderBy = orderBy;
+        this._orderBys = orderBys;
 
         this._table_refs = new Map;
         this._linked_tables = [];
@@ -23,8 +23,8 @@ export class SQL_BUILDER {
     getSelects () {
         return this._selects;
     }
-    getOrderBy () {
-        return this._orderBy;
+    getOrderBys () {
+        return this._orderBys;
     }
     getTableName () {
         return this.getQuery().getConfig().DB_MAP[this.getTable()].name;
@@ -44,7 +44,7 @@ export class SQL_BUILDER {
         }
         let selects = [];
         this.getSelects().forEach((v, k) => {
-            let val = v.getCodes().getSQL(this) + ((k) ? ' AS ' + k : '');
+            let val = v.getCodes().getSQL(this) + ((k) ? ' AS ' + this.constructor.escapeDBIdentifier(k, true) : '');
             if (val) {
                 selects.push(val);
             }
@@ -52,22 +52,29 @@ export class SQL_BUILDER {
         if (!selects.length) {
             selects.push('*');
         }
-        let order_by_str = this.getOrderBy().getCodes().getSQL(this);
-        if (order_by_str) {
-            order_by_str = '\nORDER BY\n\t' + order_by_str;
+        let orders = [];
+        this.getOrderBys().forEach((v, k) => {
+            let code = k.getCodes().getSQL(this);
+            if (code) {
+                orders.push(code + (v.toLowerCase() === 'desc' ? ' DESC' : ' ASC' ));
+            }
+        });
+        let order_by_str = '';
+        if (orders.length) {
+            order_by_str = '\nORDER BY\n\t' + orders.join(',');
         }
 
         let join_str = '';
         if (this._table_refs.size) {
             let join_ary = [];
             for (let table_ref of this._linked_tables) {
-                join_ary.push(`LEFT JOIN ${ table_ref.table_obj.name } AS ${ table_ref.alias } ON ${ table_ref.parser.getCodes().getSQL(this) }`);
+                join_ary.push(`LEFT JOIN ${ this.constructor.escapeDBTableName(table_ref.table_obj.name, true) } AS ${ this.constructor.escapeDBIdentifier(table_ref.alias, true) } ON ${ table_ref.parser.getCodes().getSQL(this) }`);
             }
             if (join_ary.length) {
                 join_str = '\n\t' + join_ary.join('\n\t');
             }
         }
-        return 'SELECT\n\t' + selects.join(',\n\t') + '\nFROM ' + this.getTableName() + join_str + query_str + group_str + having_str + order_by_str;
+        return 'SELECT\n\t' + selects.join(',\n\t') + '\nFROM ' + this.constructor.escapeDBTableName(this.getTableName(), true) + join_str + query_str + group_str + having_str + order_by_str;
     }
     _addTableLink (table_ary) {
         let table_str = this.constructor.tableArrayToString(table_ary);
@@ -146,5 +153,47 @@ export class SQL_BUILDER {
     }
     static tableArrayToString (table_ary) {
         return table_ary.join("\0");
+    }
+
+    static escapeDBString (value, include_wrapper = false) {
+        value = value.replace("\\", "\\\\")
+                .replace("\0", "\\0")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t")
+                .replace("'", "\\'")
+                .replace(String.fromCharCode(26), '\\Z')
+                .replace('\b', '\\b');
+        if (include_wrapper) {
+            return `'${ value }'`;
+        }
+        return value;
+    }
+    static escapeDBTableName (value, include_wrapper = false) {
+        if (/[\0\\\/:*<>|."%?]/.test(value)) {
+            throw "The following characters may not be used for table or column names: \\/:*<>|.\"%?";
+        }
+        if (include_wrapper) {
+            return `"${ value.replace('"', '""') }"`;
+        }
+        return value.replace('"', '""');
+    }
+    static escapeDBColumnName (value, include_wrapper = false) {
+        if (/[\0\\\/:*<>|."%?]/.test(value)) {
+            throw "The following characters may not be used for table or column names: \\/:*<>|.\"%?";
+        }
+        if (/^-?[0-9]+$/.test(value)) {
+            throw "Column name cannot match [-][0-9...]";
+        }
+        if (include_wrapper) {
+            return `"${ value.replace('"', '""') }"`;
+        }
+        return value.replace('"', '""');
+    }
+    static escapeDBIdentifier (value, include_wrapper = false) {
+        if (include_wrapper) {
+            return `"${ value.replace('"', '""') }"`;
+        }
+        return value.replace('"', '""');
     }
 }

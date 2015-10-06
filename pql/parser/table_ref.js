@@ -29,6 +29,6 @@ export class TABLE_REF {
         return this._refs;
     }
     getSQL (query_obj) {
-        return query_obj.setJoin(this.getRefs());
+        return query_obj.constructor.escapeDBIdentifier(query_obj.setJoin(this.getRefs()), true);
     }
 }

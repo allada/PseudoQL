@@ -46,6 +46,6 @@ export class FIELD extends OPCODE {
         return this.getFieldConfig().type;
     }
     getSQL (query_obj) {
-        return (this.getTableRef() ? this.getTableRef().getSQL(query_obj) : this.getPqlObj().getConfig().DB_MAP[this.getPqlObj().getRefTable()].name) + '.' + this.getField();
+        return (this.getTableRef() ? this.getTableRef().getSQL(query_obj) : query_obj.constructor.escapeDBIdentifier(this.getPqlObj().getConfig().DB_MAP[this.getPqlObj().getRefTable()].name, true)) + '.' + query_obj.constructor.escapeDBColumnName(this.getField(), true);
     }
 }

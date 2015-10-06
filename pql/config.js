@@ -149,20 +149,26 @@ Config.FUNCTION_MAP  = {
     abs: {
         min_args: 1,
         max_args: 1,
+        arg_types: [
+            Config.NUMERIC,
+        ],
         return_type: Config.NUMERIC,
         format: ['ABS(', Config.ARG1, ')'],
     },
     'char': {
         min_args: 1,
         max_args: Infinity,
+        arg_types: [
+            Config.NUMERIC,
+        ],
         return_type: Config.STRING,
         format: ['CHAR(', Config.ALL_ARGS, ')'],
     },
     coalesce: {
         min_args: 1,
-        max_args: 1,
+        max_args: Infinity,
         return_type: Config.ANY_TYPE,
-        format: ['COALESCE(', Config.ARG1, ')'],
+        format: ['COALESCE(', Config.ALL_ARGS, ')'],
     },
     ifnull: {
         min_args: 2,
@@ -174,6 +180,10 @@ Config.FUNCTION_MAP  = {
         min_args: 2,
         max_args: 2,
         return_type: Config.NUMERIC,
+        arg_types: [
+            Config.STRING,
+            Config.STRING,
+        ],
         format: ['INSTR(', Config.ARG1, ', ', Config.ARG2, ')'],
     },
     hex: {
@@ -185,18 +195,27 @@ Config.FUNCTION_MAP  = {
     length: {
         min_args: 1,
         max_args: 1,
+        arg_types: [
+            Config.STRING,
+        ],
         return_type: Config.NUMERIC,
         format: ['LENGTH(', Config.ARG1, ')'],
     },
     lower: {
         min_args: 1,
         max_args: 1,
+        arg_types: [
+            Config.STRING,
+        ],
         return_type: Config.STRING,
         format: ['LOWER(', Config.ARG1, ')'],
     },
     ltrim: {
         min_args: 1,
         max_args: 1,
+        arg_types: [
+            Config.STRING,
+        ],
         return_type: Config.STRING,
         format: ['LTRIM(', Config.ARG1, ')'],
     },
@@ -215,48 +234,77 @@ Config.FUNCTION_MAP  = {
     replace: {
         min_args: 3,
         max_args: 3,
+        arg_types: [
+            Config.STRING,
+            Config.STRING,
+            Config.STRING,
+        ],
         return_type: Config.STRING,
         format: ['REPLACE(', Config.ARG1, ', ', Config.ARG2, ', ', Config.ARG3, ')'],
     },
     round: {
         min_args: 1,
         max_args: 2,
+        arg_types: [
+            Config.NUMERIC,
+            Config.NUMERIC,
+        ],
         return_type: Config.NUMERIC,
         format: ['ROUND(', Config.ALL_ARGS, ')'],
     },
     rtrim: {
         min_args: 1,
         max_args: 1,
+        arg_types: [
+            Config.STRING,
+        ],
         return_type: Config.STRING,
         format: ['RTRIM(', Config.ARG1, ')'],
     },
     substr: {
         min_args: 2,
         max_args: 3,
+        arg_types: [
+            Config.STRING,
+            Config.NUMERIC,
+            Config.NUMERIC,
+        ],
         return_type: Config.STRING,
         format: ['SUBSTR(', Config.ALL_ARGS, ')'],
     },
     trim: {
         min_args: 1,
         max_args: 1,
+        arg_types: [
+            Config.STRING,
+        ],
         return_type: Config.STRING,
         format: ['TRIM(', Config.ARG1, ')'],
     },
     upper: {
         min_args: 1,
         max_args: 1,
+        arg_types: [
+            Config.STRING,
+        ],
         return_type: Config.STRING,
         format: ['UPPER(', Config.ARG1, ')'],
     },
     upper: {
         min_args: 1,
         max_args: 1,
+        arg_types: [
+            Config.STRING,
+        ],
         return_type: Config.STRING,
         format: ['UPPER(', Config.ARG1, ')'],
     },
     concat: {
         min_args: 1,
         max_args: Infinity,
+        arg_types: [
+            Config.STRING,
+        ],
         return_type: Config.STRING,
         format: ['CONCAT(', Config.ALL_ARGS, ')'],
     },
@@ -265,48 +313,73 @@ Config.FUNCTION_MAP  = {
     date_format: {
         min_args: 2,
         max_args: 2,
+        arg_types: [
+            Config.DATE,
+            Config.STRING,
+        ],
         return_type: Config.STRING,
         format: ['DATE_FORMAT(', Config.ARG1, ', ', Config.ARG2,')'],
     },
     date: {
         min_args: 1,
         max_args: 1,
+        arg_types: [
+            Config.DATE,
+        ],
         return_type: Config.DATE,
         format: ['DATE(', Config.ARG1, ')'],
     },
     day: {
         min_args: 1,
         max_args: 1,
+        arg_types: [
+            Config.DATE,
+        ],
         return_type: Config.NUMERIC,
         format: ['DAY(', Config.ARG1, ')'],
     },
     from_unixtime: {
         min_args: 1,
         max_args: 1,
+        arg_types: [
+            Config.NUMERIC,
+        ],
         return_type: Config.DATE,
         format: ['FROM_UNIXTIME(', Config.ARG1, ')'],
     },
     hour: {
         min_args: 1,
         max_args: 1,
+        arg_types: [
+            Config.DATE,
+        ],
         return_type: Config.NUMERIC,
         format: ['HOUR(', Config.ARG1, ')'],
     },
     hour: {
         min_args: 1,
         max_args: 1,
+        arg_types: [
+            Config.DATE,
+        ],
         return_type: Config.NUMERIC,
         format: ['HOUR(', Config.ARG1, ')'],
     },
     minute: {
         min_args: 1,
         max_args: 1,
+        arg_types: [
+            Config.DATE,
+        ],
         return_type: Config.NUMERIC,
         format: ['MINUTE(', Config.ARG1, ')'],
     },
     month: {
         min_args: 1,
         max_args: 1,
+        arg_types: [
+            Config.DATE,
+        ],
         return_type: Config.NUMERIC,
         format: ['MONTH(', Config.ARG1, ')'],
     },
@@ -319,24 +392,36 @@ Config.FUNCTION_MAP  = {
     second: {
         min_args: 1,
         max_args: 1,
+        arg_types: [
+            Config.DATE,
+        ],
         return_type: Config.NUMERIC,
         format: ['SECOND(', Config.ARG1, ')'],
     },
     time: {
         min_args: 1,
         max_args: 1,
+        arg_types: [
+            Config.DATE,
+        ],
         return_type: Config.STRING,
         format: ['TIME(', Config.ARG1, ')'],
     },
     unix_timestamp: {
         min_args: 0,
         max_args: 1,
+        arg_types: [
+            Config.DATE,
+        ],
         return_type: Config.NUMERIC,
-        format: ['UNIX_TIMESTAMP(', Config.ALL_ARGS, ')'],
+        format: ['UNIX_TIMESTAMP(', Config.ARG1, ')'],
     },
     year: {
         min_args: 1,
         max_args: 1,
+        arg_types: [
+            Config.DATE,
+        ],
         return_type: Config.NUMERIC,
         format: ['YEAR(', Config.ARG1, ')'],
     },
@@ -345,6 +430,10 @@ Config.FUNCTION_MAP  = {
     avg: {
         min_args: 1,
         max_args: 2,
+        arg_types: [
+            Config.NUMERIC,
+            Config.BOOLEAN,
+        ],
         return_type: Config.NUMERIC,
         is_group_function: true,
         format: {
@@ -361,6 +450,10 @@ Config.FUNCTION_MAP  = {
     count: {
         min_args: 1,
         max_args: 2,
+        arg_types: [
+            Config.NUMERIC,
+            Config.BOOLEAN,
+        ],
         return_type: Config.NUMERIC,
         is_group_function: true,
         format: {
@@ -378,6 +471,13 @@ Config.FUNCTION_MAP  = {
     group_concat: {
         min_args: 1,
         max_args: Infinity,
+        arg_types: [
+            Config.STRING,
+            Config.BOOLEAN,
+            Config.STRING,
+            Config.STRING,
+            Config.STRING,
+        ],
         return_type: Config.STRING,
         is_group_function: true,
         format: (args, orig_args) => {
@@ -413,6 +513,10 @@ Config.FUNCTION_MAP  = {
     max: {
         min_args: 1,
         max_args: 2,
+        arg_types: [
+            Config.NUMERIC,
+            Config.BOOLEAN,
+        ],
         return_type: Config.NUMERIC,
         is_group_function: true,
         format: {
@@ -429,6 +533,10 @@ Config.FUNCTION_MAP  = {
     min: {
         min_args: 1,
         max_args: 2,
+        arg_types: [
+            Config.NUMERIC,
+            Config.BOOLEAN,
+        ],
         return_type: Config.NUMERIC,
         is_group_function: true,
         format: {
@@ -445,6 +553,10 @@ Config.FUNCTION_MAP  = {
     sum: {
         min_args: 1,
         max_args: 2,
+        arg_types: [
+            Config.NUMERIC,
+            Config.BOOLEAN,
+        ],
         return_type: Config.NUMERIC,
         is_group_function: true,
         format: {
@@ -458,6 +570,13 @@ Config.FUNCTION_MAP  = {
             }],
         },
     },
+    having: {
+        min_args: 1,
+        max_args: 1,
+        return_type: Config.ANY,
+        is_group_function: true,
+        format: [Config.ARG1],
+    }
 };
 
 import { EQUAL }        from  './opcodes/comparitors/equal.js';

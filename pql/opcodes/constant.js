@@ -4,24 +4,31 @@ export class CONSTANT extends OPCODE {
     constructor (pql_obj, val) {
         super(pql_obj, val);
 
+        this._force_numeric = false;
         this.setValue(val);
     }
     setValue (val) {
         this._value = val;
         return this;
     }
+    setForceNumeric (force) {
+        this._force_numeric = !!force;
+    }
     getValue () {
         return this._value;
     }
     getSQL (query_object, type_ref) {
         let value = this.getValue();
-        if (type_ref && type_ref.is_numeric && /^-?(?:[0-9]+(?:\.[0-9]+)?|\.[0-9]+)$/.test(value)) {
-            return this.getValue().replace(/[^0-9.\-]+/, '');
+        if ((this._force_numeric || (type_ref && type_ref.is_numeric)) && this.constructor.canBeNumeric(value)) {
+            return value.replace(/[^0-9.\-]+/, '');
         } else {
-            return "'" + this.getValue().replace(/([\\'])/, '\\$1').replace("\r", "\\r").replace("\n", "\\n").replace("\t", "\\t") + "'";
+            return "'" + query_object.constructor.escapeDBString(value) + "'";
         }
     }
     isConstant () {
         return true;
+    }
+    static canBeNumeric (value) {
+        return /^-?(?:[0-9]+(?:\.[0-9]+)?|\.[0-9]+)$/.test(value);
     }
 }

@@ -37,8 +37,24 @@
                 <td><input type="text" id="group_by" style="width:300px;" /></td>
             </tr>
             <tr>
-                <th>Order By:</th>
-                <td><input type="text" id="order_by" style="width:300px;" /></td>
+                <th>Order Bys:</th>
+                <td><table border="0" cellpadding="0" cellspacing="0" id="order_table" width="308px">
+                    <tr>
+                        <th style="width:65%;">Query</th>
+                        <th style="width:20%;">Dir</th>
+                        <td style="width:10%;"><input type="button" value="+" onclick="addOrderBy()" /></td>
+                    </tr>
+                    <tr>
+                        <th><input type="text" name="order_values[]" style="width:95%;" value="customer.name" /></th>
+                        <th colspan="2"><select name="order_dirs[]" style="width:95%;">
+                            <option value="asc">ASC</option>
+                            <option value="desc">DESC</option>
+                        </select></th>
+                    </tr>
+                </table></td>
+            </tr>
+            <tr>
+                <td colspan="2">&nbsp;</td>
             </tr>
             <tr>
                 <th>Selects:</th>
@@ -67,7 +83,7 @@
             </tr>
             <tr>
                 <th style="height:200px;">Output:</th>
-                <td><textarea id="output_query" style="width:80%;height:300px;" readonly="readonly"></textarea></td>
+                <td><div id="output_query" style="width:80%;height:300px;border:1px solid black;white-space:pre;font-size:8pt;font-family:monospace;overflow:auto;"></div></td>
             </tr>
         </table>
         <!-- <textarea id="psudoql" style="width:100%;height:300px"></textarea>
@@ -75,96 +91,160 @@
         <script type="module">
             import { PQL } from './pql/PQL.js';
             import { Config } from './pql/config.js';
+            (() => {
+                let output_query_el, query_el, table_el, group_by_el, select_names, select_values, order_dirs, order_values;
 
-            window.addSelects = () => {
-                var select_table = document.getElementById('select_table');
-                var tr = select_table.appendChild(document.createElement('tr'));
-                var td1 = tr.appendChild(document.createElement('td'));
-                var td2 = tr.appendChild(document.createElement('td'));
+                function refreshMappings () {
+                    output_query_el = document.getElementById('output_query');
+    
+                    query_el    = document.getElementById('query');
+                    table_el    = document.getElementById('table');
+                    group_by_el = document.getElementById('group_by');
+    
+                    select_names = document.getElementsByName('select_names[]');
+                    select_values = document.getElementsByName('select_values[]');
+    
+                    order_dirs = document.getElementsByName('order_dirs[]');
+                    order_values = document.getElementsByName('order_values[]');
 
-                var input1 = td1.appendChild(document.createElement('input'));
-                var input2 = td2.appendChild(document.createElement('input'));
+                    PQL.setDefaultConfig(Config);
+                    while (table_el.firstChild) {
+                        table_el.removeChild(table_el.firstChild);
+                    }
+                    for (let i in Config.DB_MAP) {
+                        if (Config.DB_MAP.hasOwnProperty(i)) {
+                            let option = document.createElement('option');
+                            option.value = i;
+                            option.appendChild(document.createTextNode(i));
+                            table_el.appendChild(option);
+                        }
+                    }
 
-                input1.type = 'text';
-                input1.name = 'select_names[]';
-                input1.style.width = '95%';
+                    let listenerObjects = new Set;
 
-                input2.type = 'text';
-                input2.name = 'select_values[]';
-                input2.style.width = '95%';
+                    listenerObjects.add(query_el);
+                    listenerObjects.add(table_el);
+                    listenerObjects.add(group_by_el);
+    
+                    for (let i of Object.keys(select_names)) {
+                        listenerObjects.add(select_names[i]);
+                        listenerObjects.add(select_values[i]);
+                    }
 
-                td2.colSpan = 2;
-
-                PQL.setDefaultConfig(Config);
-
-                var output_query_el = document.getElementById('output_query');
-
-                var query_el    = document.getElementById('query');
-                var table_el    = document.getElementById('table');
-                var group_by_el = document.getElementById('group_by');
-                var order_by_el = document.getElementById('order_by');
-
-                var select_names = document.getElementsByName('select_names[]');
-                var select_values = document.getElementsByName('select_values[]');
-
-                let eventFn = function () {
+                    for (let i of Object.keys(order_values)) {
+                        listenerObjects.add(order_dirs[i]);
+                        listenerObjects.add(order_values[i]);
+                    }
+    
+                    listenerObjects.forEach((v, k) => {
+                        v.removeEventListener('change', runQuery);
+                        v.addEventListener('change', runQuery);
+                        v.removeEventListener('keyup', runQuery);
+                        v.addEventListener('keyup', runQuery);
+                        v.removeEventListener('paste', runQuery);
+                        v.addEventListener('paste', runQuery);
+                        v.removeEventListener('input', runQuery);
+                        v.addEventListener('input', runQuery);
+                    });
+                    runQuery();
+                }
+                let runQuery = function () {
                     try {
                         let fields = {};
                         for (let i of Object.keys(select_names)) {
-                            fields[select_names[i].value] = select_values[i].value;
+                            fields[select_names[i].value === '' ? Symbol() : select_names[i].value] = select_values[i].value;
+                        }
+    
+                        let orders = {};
+                        for (let i of Object.keys(order_values)) {
+                            orders[order_values[i].value] = order_dirs[i].value;
                         }
                         let query = PQL.getSQL({
                             query: query_el.value,
                             table: table_el.value,
                             group: group_by_el.value,
                             selects: fields,
-                            orderBy: order_by_el.value,
+                            orderBys: orders,
                         });
-                        console.log(query);
-                        output_query_el.value = query;
+                        while (output_query_el.firstChild) {
+                            output_query_el.removeChild(output_query_el.firstChild);
+                        }
+                        output_query_el.appendChild(document.createTextNode(query));
                     } catch (e) {
-                        output_query_el.value = e.message || e;
+                        while (output_query_el.firstChild) {
+                            output_query_el.removeChild(output_query_el.firstChild);
+                        }
+    
+                        if (e instanceof Array) {
+                            output_query_el.appendChild(document.createTextNode(e[0]));
+                            output_query_el.appendChild(document.createElement('br'));
+                            output_query_el.appendChild(document.createElement('br'));
+    
+                            let span1 = output_query_el.appendChild(document.createElement('span'));
+                            let span2 = output_query_el.appendChild(document.createElement('span'));
+                            span1.appendChild(document.createTextNode(e[2].substr(0, e[1])));
+                            span2.appendChild(document.createTextNode(e[2].substr(e[1])));
+    
+                            span2.style.backgroundColor = '#EEE';
+                        } else {
+                            output_query_el.appendChild(document.createTextNode(e.message || e));
+                        }
                         return;
                     }
                 };
+                window.addSelects = () => {
+                    var select_table = document.getElementById('select_table');
+                    var tr = select_table.appendChild(document.createElement('tr'));
+                    var td1 = tr.appendChild(document.createElement('td'));
+                    var td2 = tr.appendChild(document.createElement('td'));
 
-                let listenerObjects = new Set;
-                listenerObjects.add(query_el);
-                listenerObjects.add(table_el);
-                listenerObjects.add(group_by_el);
-                listenerObjects.add(order_by_el);
+                    var input1 = td1.appendChild(document.createElement('input'));
+                    var input2 = td2.appendChild(document.createElement('input'));
 
-                for (let i of Object.keys(select_names)) {
-                    listenerObjects.add(select_names[i]);
-                    listenerObjects.add(select_values[i]);
-                }
+                    input1.type = 'text';
+                    input1.name = 'select_names[]';
+                    input1.style.width = '95%';
 
-                listenerObjects.forEach((v, k) => {
-                    v.removeEventListener('change', eventFn);
-                    v.addEventListener('change', eventFn);
-                    v.removeEventListener('keyup', eventFn);
-                    v.addEventListener('keyup', eventFn);
-                    v.removeEventListener('paste', eventFn);
-                    v.addEventListener('paste', eventFn);
-                    v.removeEventListener('input', eventFn);
-                    v.addEventListener('input', eventFn);
-                });
+                    input2.type = 'text';
+                    input2.name = 'select_values[]';
+                    input2.style.width = '95%';
 
-                let table_field     = document.getElementById('table');
+                    td2.colSpan = 2;
 
-                while (table_field.firstChild) {
-                    table_field.removeChild(table_field.firstChild);
-                }
-                for (let i in Config.DB_MAP) {
-                    if (Config.DB_MAP.hasOwnProperty(i)) {
-                        let option = document.createElement('option');
-                        option.value = i;
-                        option.appendChild(document.createTextNode(i));
-                        table_field.appendChild(option);
-                    }
-                }
-                eventFn();
-            };
+                    refreshMappings();
+                };
+
+                window.addOrderBy = () => {
+                    var order_table = document.getElementById('order_table');
+                    var tr = order_table.appendChild(document.createElement('tr'));
+                    var td1 = tr.appendChild(document.createElement('td'));
+                    var td2 = tr.appendChild(document.createElement('td'));
+
+                    var input = td1.appendChild(document.createElement('input'));
+                    var select = td2.appendChild(document.createElement('select'));
+
+                    input.type = 'text';
+                    input.name = 'order_values[]';
+                    input.style.width = '95%';
+
+                    select.name = 'order_dirs[]';
+                    select.style.width = '95%';
+
+                    var asc = document.createElement('option');
+                    var desc = document.createElement('option');
+                    asc.value = 'asc';
+                    desc.value = 'desc';
+                    asc.appendChild(document.createTextNode('ASC'));
+                    desc.appendChild(document.createTextNode('DESC'));
+
+                    select.appendChild(asc);
+                    select.appendChild(desc);
+
+                    td2.colSpan = 2;
+
+                    refreshMappings();
+                };
+            })();
             window.addSelects();
         </script>
     </body>

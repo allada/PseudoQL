@@ -35,7 +35,6 @@ export class PARSER {
             group.setNeedWrap(false);
             this.setCodes(group);
         } else {
-
             try {
                 let general = this.T_GENERAL(query, allow_seperator);
                 if (general !== false && general[0] != query.length) {
@@ -47,9 +46,10 @@ export class PARSER {
                 this.setCodes(general[1]);
             } catch (e) {
                 if (e instanceof Array) {
-                    this.setError([`${e[0]} at character ${(query.length - e[1]).toString()}`, query.length - e[1]], true);
+                    this.setError([`${e[0]} at character ${(query.length - e[1]).toString()}`, query.length - e[1], query], true);
+                } else {
+                    this.setError(e.message || e, true);
                 }
-                this.setError(e.message || e, true);
             }
         }
     }
@@ -129,6 +129,7 @@ export class PARSER {
     hasError () {
         return this._hasError;
     }
+
     getConfig () {
         return this._config;
     }
@@ -192,7 +193,7 @@ export class PARSER {
         if (!sub_ref) {
             let field = this.T_FIELD(str, table_ref);
             if (!field) {
-                throw ["Expected T_FIELD", str.length];
+                throw ["Expected T_FIELD", str.length, [FIELD]];
             }
             return [
                 match[0].length + field[0],
@@ -278,7 +279,11 @@ export class PARSER {
             }
         }
 
-        let field = new FIELD(this, match[0], table_ref);
+        try {
+            var field = new FIELD(this, match[0], table_ref);
+        } catch (e) {
+            throw [e, str.length, [FIELD]];
+        }
         str = str.substring(match[0].length);
 
         let comparitor = this.T_COMPARITOR(str);
@@ -299,7 +304,7 @@ export class PARSER {
         str = str.substring(comparitor[0]);
         let value = this.T_COMPARE_VALUE(str);
         if (!value) {
-            throw ["Expected T_COMPARE_VALUE", str.length];
+            throw ["Expected T_COMPARE_VALUE", str.length, [CONSTANT, NULL]];
         }
         comparitor[1]
             .setLeft(field)
@@ -319,7 +324,11 @@ export class PARSER {
         if (!match) {
             return false;
         }
-        let func        = new FUNCTION(this, match[1]);
+        try {
+            var func        = new FUNCTION(this, match[1]);
+        } catch (e) {
+            throw [e, str.length, [FUNCTION]];
+        }
         let max_args    = func.getMaxArgs();
         let min_args    = func.getMinArgs();
         let sum_length  = 0;
@@ -328,11 +337,11 @@ export class PARSER {
         str = str.substring(match[0].length);
         for (let i = 0; true; i++) {
             if (found_args.length >= max_args) {
-                throw ["Function '" + func.getFuncName() + "' cannot have more than " + max_args.toString() + " args", str.length];
+                throw ["Function '" + func.getFuncName() + "' cannot have more than " + max_args.toString() + " args", str.length, []];
             }
             let general = this.T_GENERAL(str);
             if (!general && found_args.length < min_args) {
-                throw ["Function '" + func.getFuncName() + "' expected " + min_args.toString() + " but got " + found_args.length.toString() + " args", str.length]; 
+                throw ["Function '" + func.getFuncName() + "' expected " + min_args.toString() + " but got " + found_args.length.toString() + " args", str.length, []]; 
             }
             if (!general) {
                 break;
