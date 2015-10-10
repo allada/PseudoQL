@@ -21,4 +21,7 @@ export class OPCODE {
     needsGroup () {
         return false;
     }
+    isInstanceOf (chk_class) {
+        return this instanceof chk_class;
+    }
 }

@@ -12,9 +12,9 @@ export class TABLE_REF {
         if (!this._cur_table_obj) {
             this._cur_table_obj = db_map[this._pql_obj.getRefTable()];
         }
-        if (this._cur_table_obj.linkTo[table]) {
+        if (this._cur_table_obj.linkTo && this._cur_table_obj.linkTo[table]) {
             this._cur_table_obj = db_map[this._cur_table_obj.linkTo[table].table];
-        } else if (this._cur_table_obj.linkFrom[table]) {
+        } else if (this._cur_table_obj.linkFrom && this._cur_table_obj.linkFrom[table]) {
             this._cur_table_obj = db_map[this._cur_table_obj.linkFrom[table].table];
         } else {
             throw `Link "${ table }" does not exist in table "${ this._cur_table_obj.name }"`;

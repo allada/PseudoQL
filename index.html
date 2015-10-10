@@ -17,16 +17,29 @@
                 font-size:12pt;
                 text-align:center;
             }
-            body {
-                zoom: 1.5;
+            body, html {
+                padding: 0px;
+                margin: 0px;
+            }
+            html {
+                zoom: 150%;
             }
         </style>
     </head>
     <body>
+        <div id="suggestion-box" style="position:absolute;top:0px;left:0px;background-color:yellow;border:1px solid black;">&nbsp;</div>
         <table border="0" width="100%" cellpadding="0" cellspacing="0">
             <tr>
                 <th>Query:</th>
-                <td><input type="text" id="query" style="width:300px;" value="sum(order_total)>500 customer.id!:- customer.name~John" /></td>
+                <td width="315"><input type="text" id="query" style="width:300px;" value="count(if(product_items_reports.product.brand_id:1054, 1, -)) > 1" /></td>
+                <td rowspan="6" style="border:1px solid black;height:100%"><table border="0" cellpadding="0" cellspacing="0" style="width:100%;height:100%;">
+                    <tr>
+                        <th>Avail Functions</th>
+                    </tr>
+                    <tr>
+                        <td style="height:230px;"><div style="overflow:auto;height:100%;width:100%;"><table id="function-list" style="white-space:nowrap;"></table></div></td>
+                    </tr>
+                </table></td>
             </tr>
             <tr>
                 <th>Table:</th>
@@ -34,7 +47,7 @@
             </tr>
             <tr>
                 <th>Group By:</th>
-                <td><input type="text" id="group_by" style="width:300px;" /></td>
+                <td><input type="text" id="group_by" style="width:300px;" value="id" /></td>
             </tr>
             <tr>
                 <th>Order Bys:</th>
@@ -45,10 +58,10 @@
                         <td style="width:10%;"><input type="button" value="+" onclick="addOrderBy()" /></td>
                     </tr>
                     <tr>
-                        <th><input type="text" name="order_values[]" style="width:95%;" value="customer.name" /></th>
+                        <th><input type="text" name="order_values[]" style="width:95%;" value="sum(product_items_reports.sell_price)" /></th>
                         <th colspan="2"><select name="order_dirs[]" style="width:95%;">
                             <option value="asc">ASC</option>
-                            <option value="desc">DESC</option>
+                            <option value="desc" selected="selected">DESC</option>
                         </select></th>
                     </tr>
                 </table></td>
@@ -69,28 +82,29 @@
                         <th colspan="2"><input type="text" name="select_values[]" style="width:95%;" value="id" /></th>
                     </tr>
                     <tr>
-                        <th><input type="text" name="select_names[]" style="width:95%;" value="ship_info" /></th>
-                        <th colspan="2"><input type="text" name="select_values[]" style="width:95%;" value="concat(customer.name, '\n', customer.address1, if(customer.address2, concat('\n', customer.address2)), '\n', customer.city, ' ', customer.state, ' ', customer.postalcode)" /></th>
+                        <th><input type="text" name="select_names[]" style="width:95%;" value="order_total" /></th>
+                        <th colspan="2"><input type="text" name="select_values[]" style="width:95%;" value="sum(product_items_reports.sell_price)" /></th>
                     </tr>
                     <tr>
-                        <th><input type="text" name="select_names[]" style="width:95%;" value="total" /></th>
-                        <th colspan="2"><input type="text" name="select_values[]" style="width:95%;" value="sum(order_total)" /></th>
+                        <th><input type="text" name="select_names[]" style="width:95%;" value="total_item_qty_on_order" /></th>
+                        <th colspan="2"><input type="text" name="select_values[]" style="width:95%;" value="count(id)" /></th>
                     </tr>
                 </table></td>
             </tr>
             <tr>
-                <td colspan="2"><hr /></td>
+                <td colspan="3"><hr /></td>
             </tr>
             <tr>
                 <th style="height:200px;">Output:</th>
-                <td><div id="output_query" style="width:80%;height:300px;border:1px solid black;white-space:pre;font-size:8pt;font-family:monospace;overflow:auto;"></div></td>
+                <td colspan="2"><div id="output_query" style="width:80%;height:300px;border:1px solid black;white-space:pre;font-size:8pt;font-family:monospace;overflow:auto;"></div></td>
             </tr>
         </table>
-        <!-- <textarea id="psudoql" style="width:100%;height:300px"></textarea>
-        <textarea id="output" style="width:100%;height:300px"></textarea> -->
         <script type="module">
             import { PQL } from './pql/PQL.js';
+            import { PARSER } from './pql/parser.js';
             import { Config } from './pql/config.js';
+            import { getCaretCoordinates } from './get_caret_pos.js';
+
             (() => {
                 class EmptyString {
                     toString () {
@@ -98,6 +112,7 @@
                     }
                 }
                 let output_query_el, query_el, table_el, group_by_el, select_names, select_values, order_dirs, order_values;
+                let suggestion_box = document.getElementById('suggestion-box');
 
                 function refreshMappings () {
                     output_query_el = document.getElementById('output_query');
@@ -113,15 +128,20 @@
                     order_values = document.getElementsByName('order_values[]');
 
                     PQL.setDefaultConfig(Config);
-                    while (table_el.firstChild) {
-                        table_el.removeChild(table_el.firstChild);
-                    }
-                    for (let i in Config.DB_MAP) {
-                        if (Config.DB_MAP.hasOwnProperty(i)) {
-                            let option = document.createElement('option');
-                            option.value = i;
-                            option.appendChild(document.createTextNode(i));
-                            table_el.appendChild(option);
+                    if (!table_el.firstChild) {
+                        while (table_el.firstChild) {
+                            table_el.removeChild(table_el.firstChild);
+                        }
+                        for (let i in Config.DB_MAP) {
+                            if (Config.DB_MAP.hasOwnProperty(i)) {
+                                let option = document.createElement('option');
+                                option.value = i;
+                                if (i === 'order') {
+                                    option.selected = "selected";
+                                }
+                                option.appendChild(document.createTextNode(i));
+                                table_el.appendChild(option);
+                            }
                         }
                     }
 
@@ -152,6 +172,44 @@
                         v.addEventListener('input', runQuery);
                     });
                     runQuery();
+
+                    let function_list_el = document.getElementById('function-list');
+                    while (function_list_el.firstChild) {
+                        function_list_el.removeChild(function_list_el.firstChild);
+                    }
+                    for (let i in Config.FUNCTION_MAP) {
+                        if (Config.FUNCTION_MAP.hasOwnProperty(i)) {
+                            let tr = function_list_el.appendChild(document.createElement('tr'));
+                            let td = tr.appendChild(document.createElement('td'));
+                            let required_args = [];
+                            let arg_count = 1;
+                            for (let j = 0; j < Config.FUNCTION_MAP[i].min_args; j++, arg_count++) {
+                                required_args.push('arg'+arg_count.toString());
+                            }
+                            let option_args = [];
+                            if (Config.FUNCTION_MAP[i].max_args === Infinity) {
+                                option_args.push('arg' + arg_count);
+                                arg_count++;
+                                option_args.push('...');
+                            } else {
+                                for (let j = 0; j < Config.FUNCTION_MAP[i].max_args; j++, arg_count++) {
+                                    option_args.push('arg'+arg_count.toString());
+                                }
+                            }
+                            if (option_args) {
+                                if (required_args.length) {
+                                    option_args = `[,${ option_args.join(',') }]`;
+                                } else {
+                                    option_args = `[${ option_args.join(',') }]`;
+                                }
+                            } else {
+                                option_args = '';
+                            }
+                            td.appendChild(document.createTextNode(i + `(${ required_args.join(',') }${ option_args })`));
+                            let td2 = tr.appendChild(document.createElement('td'));
+                            td2.appendChild(document.createTextNode(Config.FUNCTION_MAP[i].description))
+                        }
+                    }
                 }
                 let runQuery = function () {
                     try {
@@ -170,6 +228,10 @@
                             group: group_by_el.value,
                             selects: fields,
                             orderBys: orders,
+                            variables: {
+                                id: 5,
+                                name: "John",
+                            }
                         });
                         while (output_query_el.firstChild) {
                             output_query_el.removeChild(output_query_el.firstChild);
@@ -194,8 +256,8 @@
                         } else {
                             output_query_el.appendChild(document.createTextNode(e.message || e));
                         }
-                        return;
                     }
+                    getSuggestion();
                 };
                 window.addSelects = () => {
                     var select_table = document.getElementById('select_table');
@@ -249,6 +311,25 @@
 
                     refreshMappings();
                 };
+                function getSuggestion () {
+                    return;
+                    let el = document.activeElement;
+                    if (el && document.activeElement.tagName == 'INPUT') {
+                        let str = el.value.substr(0, el.selectionStart);
+                        let {top, left} = getCaretCoordinates(el, el.selectionStart);
+                        top += el.getBoundingClientRect().top - document.body.getBoundingClientRect().top;
+                        left += el.getBoundingClientRect().left - document.body.getBoundingClientRect().left;
+                        suggestion_box.style.top = (top + 15).toString() + 'px';
+                        suggestion_box.style.left = left.toString() + 'px';
+                        try {
+                            let parser = new PARSER(str, table_el.value, false, Config);
+                            suggestion_box.innerHTML = (parser.getError() || '') + '<br />' + parser.getSuggestions().join(',');
+                        } catch (e) {
+                            suggestion_box.innerHTML = e.message || e;
+                        }
+                        
+                    }
+                }
             })();
             window.addSelects();
         </script>

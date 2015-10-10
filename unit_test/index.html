@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>QUnit Example</title>
+        <script src="https://google.github.io/traceur-compiler/bin/traceur.js"></script>
+        <script src="https://google.github.io/traceur-compiler/src/bootstrap.js"></script>
+        <link rel="stylesheet" href="//code.jquery.com/qunit/qunit-1.19.0.css">
+    </head>
+    <body>
+        <div id="qunit"></div>
+        <div id="qunit-fixture"></div>
+        <script src="//code.jquery.com/qunit/qunit-1.19.0.js"></script>
+        <script type="application/javascript">
+            window.QUnit.config.autostart = false;
+        </script>
+        <script type="module">
+            // Done this way because of cwd issues
+            import 'tests/compare.js';
+            import 'tests/cross_table.js';
+            import 'tests/seperators.js';
+            import 'tests/groups.js';
+            import 'tests/constants.js';
+            import 'tests/functions.js';
+            import 'tests/variable.js';
+            import 'tests/selects.js';
+            import 'tests/group_by.js';
+            import 'tests/order_by.js';
+
+            import { PQL } from './../pql/PQL.js';
+            import { Config } from './test_config.js';
+            PQL.setDefaultConfig(Config);
+
+            window.QUnit.start();
+        </script>
+    </body>
+</html>

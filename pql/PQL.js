@@ -9,13 +9,16 @@ export class PQL {
         PQL._defaultConfig = v;
     }
 
-    static getSQL ({ query, table, group, selects, orderBys }) {
-        var query_parser = new PARSER(query, table, false, this.defaultConfig);
+    static getSQL ({ query, table, group, selects, orderBys, variables }) {
+        var query_parser = new PARSER(query, table, false, this.defaultConfig, [], variables);
         if (query_parser.hasError()) {
             throw query_parser.getError();
         }
 
-        var group_parser = new PARSER(group, table, true, this.defaultConfig);
+        if (group === undefined) {
+            group = 'id';
+        }
+        var group_parser = new PARSER(group, table, true, this.defaultConfig, [], variables);
         if (group_parser.hasError()) {
             throw group_parser.getError();
         }
@@ -23,7 +26,7 @@ export class PQL {
         let select_parsers = new Map();
         if (selects instanceof Map) {
             selects.forEach((v, k) => {
-                let val = new PARSER(v, table, false, this.defaultConfig);
+                let val = new PARSER(v, table, false, this.defaultConfig, [], variables);
                 if (val.hasError()) {
                     throw val.getError();
                 }
@@ -32,7 +35,7 @@ export class PQL {
         } else {
             for (let k in selects) {
                 if (selects.hasOwnProperty(k)) {
-                    let v = new PARSER(selects[k], table, false, this.defaultConfig);
+                    let v = new PARSER(selects[k], table, false, this.defaultConfig, [], variables);
                     if (v.hasError()) {
                         throw v.getError();
                     }
@@ -41,15 +44,11 @@ export class PQL {
             }
         }
 
-        if (!select_parsers.size) {
-            throw "Must have at least 1 select";
-        }
-
         let order_by_parsers = new Map();
         if (orderBys instanceof Map) {
             orderBys.forEach((v, k) => {
                 // This one is backwards... be warned that k is the string v is the [desc, asc]
-                let val = new PARSER(k, table, false, this.defaultConfig);
+                let val = new PARSER(k, table, false, this.defaultConfig, [], variables);
                 if (val.hasError()) {
                     throw val.getError();
                 }
@@ -58,7 +57,7 @@ export class PQL {
         } else {
             for (let k in orderBys) {
                 if (orderBys.hasOwnProperty(k)) {
-                    let v = new PARSER(k, table, false, this.defaultConfig);
+                    let v = new PARSER(k, table, false, this.defaultConfig, [], variables);
                     if (v.hasError()) {
                         throw v.getError();
                     }

@@ -20,9 +20,9 @@ export class CONSTANT extends OPCODE {
     getSQL (query_object, type_ref) {
         let value = this.getValue();
         if ((this._force_numeric || (type_ref && type_ref.is_numeric)) && this.constructor.canBeNumeric(value)) {
-            return value.replace(/[^0-9.\-]+/, '');
+            return value.toString().replace(/[^0-9.\-]+/g, '');
         } else {
-            return "'" + query_object.constructor.escapeDBString(value) + "'";
+            return query_object.constructor.escapeDBString(value.toString(), true);
         }
     }
     isConstant () {

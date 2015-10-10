@@ -9,15 +9,18 @@ import { OR }           from './opcodes/or.js';
 import { SEPERATOR }    from './opcodes/seperator.js';
 import { SEPERATORS }   from './opcodes/seperators.js';
 import { NO_VALUE }     from './opcodes/comparitors/no_value.js';
+import { VARIABLE }     from './opcodes/variable.js';
+import { CONSTANTS_ARRAY } from './opcodes/constants_array.js';
 import { TABLE_REF }    from './parser/table_ref.js';
 
 export class PARSER {
-    constructor (query, ref_table, allow_seperator = false, config = null, table_refs = []) {
+    constructor (query, ref_table, allow_seperator = false, config = null, table_refs = [], variables = {}) {
         this._hasError      = false;
         this._error         = null;
         this._codes         = [];
         this._comparitors   = new COMPARITORS(config.COMPARITORS);
         this._table_refs    = table_refs;
+        this._variables     = {};
 
         // Defaults to false
         allow_seperator     = !!allow_seperator;
@@ -30,17 +33,21 @@ export class PARSER {
 
         this._ref_table = ref_table;
 
-        if (!query.length) {
+        if (query === null || query === undefined || !query.length) {
             let group = new GROUP(this, []);
             group.setNeedWrap(false);
             this.setCodes(group);
+            this.assignVariables(variables);
         } else {
             try {
                 let general = this.T_GENERAL(query, allow_seperator);
-                if (general !== false && general[0] != query.length) {
+                if (general === false) {
+                    throw ["Unknown character", query.length];
+                }
+                if (general[0] != query.length) {
                     throw ["Unknown character", query.length - general[0]];
                 }
-                if (general[1] instanceof GROUP) {
+                if (general[1].isInstanceOf(GROUP)) {
                     general[1].setNeedWrap(false)
                 }
                 this.setCodes(general[1]);
@@ -50,8 +57,30 @@ export class PARSER {
                 } else {
                     this.setError(e.message || e, true);
                 }
+            } finally {
+                this.assignVariables(variables);
             }
         }
+    }
+    assignVariables (var_list_obj) {
+        for (let var_name in var_list_obj) {
+            if (var_list_obj.hasOwnProperty(var_name)) {
+                this.assignVariable(var_name, var_list_obj[var_name]);
+            }
+        }
+    }
+    assignVariable (var_name, val) {
+        if (this._variables[var_name]) {
+            for (let obj of this._variables[var_name]) {
+                obj.setValue(val);
+            }
+        }
+    }
+    addVariable (var_name, obj) {
+        if (this._variables[var_name] === undefined) {
+            this._variables[var_name] = [];
+        }
+        this._variables[var_name].push(obj);
     }
     getRefTable () {
         return this._ref_table;
@@ -59,32 +88,40 @@ export class PARSER {
     _getCodesOfGroup (need_group) {
         let codes = this._codes;
 
-        if (codes instanceof GROUP) {
+        if (codes && (codes.isInstanceOf(GROUP))) {
             let group_codes = codes.getOpCodes();
             let new_codes = [];
+            let has_or = false;
+            let has_needs_group = false;
             for (let code of group_codes) {
                 // If it has an OR just return all of them if in where
-                if (code instanceof OR) {
+                if (code.isInstanceOf(OR)) {
+                    has_or = true;
+                }
+                if (code.needsGroup()) {
+                    has_needs_group = true;
+                }
+                if (has_or && has_needs_group) {
                     if (need_group) {
                         return codes;
                     } else {
                         return (new GROUP(this, [])).setNeedWrap(false);
                     }
                 }
-                if (!!need_group == code.needsGroup()) {
+                if (!!need_group === code.needsGroup()) {
                     new_codes.push(code);
                 }
             }
             // Trims off any comparitors (ANDs and ORs) from beginning and end of codes
             while (new_codes.length) {
-                if (new_codes[0] instanceof SEPERATORS) {
+                if (new_codes[0] && (new_codes[0].isInstanceOf(SEPERATORS))) {
                     new_codes.shift();
                 } else {
                     break;
                 }
             }
             while (new_codes.length) {
-                if (new_codes[new_codes.length - 1] instanceof SEPERATORS) {
+                if (new_codes[new_codes.length - 1] && (new_codes[new_codes.length - 1].isInstanceOf(SEPERATORS))) {
                     new_codes.pop();
                 } else {
                     break;
@@ -92,7 +129,7 @@ export class PARSER {
             }
             return (new GROUP(this, new_codes)).setNeedWrap(false);
         } else {
-            if (need_group != codes.needsGroup()) {
+            if (need_group !== codes.needsGroup()) {
                 return (new GROUP(this, [])).setNeedWrap(false);
             } else {
                 return codes;
@@ -170,7 +207,7 @@ export class PARSER {
      * When a table reference is specified.
      */
     T_TABLE_REF (str, table_ref) {
-        let match = str.match(/^([a-zA-Z0-9_]+)\./);
+        let match = str.match(/^\s*([a-zA-Z_][a-zA-Z0-9_]*)\./);
         if (!match) {
             return false;
         }
@@ -209,63 +246,64 @@ export class PARSER {
      * Is the value that comes after a comparitor.
      */
     T_COMPARE_VALUE (str) {
-        var next_char;
-        var tries = 0;
-        var next_char;
+        let ret_const = this.T_CONSTANT(str);
+        if (ret_const) {
+            return ret_const;
+        }
+        let match = str.match(/^\s*([a-zA-Z0-9_\-.]+)/);
+        if (match) {
+            return [
+                match[0].length,
+                new CONSTANT(this, match[1])
+            ];
+        }
+        let ret_array = this.T_ARRAY_VALUE(str);
+        if (ret_array) {
+            return ret_array;
+        }
+        return false;
+    }
+    T_ARRAY_VALUE (str) {
+        let tries = 0;
+        let next_char;
         // Ignore spaces
         while ((next_char = str.substr(tries, 1)) && (next_char === ' ' || next_char === "\r" || next_char === "\n" || next_char === "\t")) {
             tries++;
         }
-        // NULL is unique and is a solid hyphen
-        if (next_char == '-' && /^-(?:[^a-zA-Z0-9_]|$)/.test(str.substr(tries))) {
-            return [
-                tries + 1,
-                new NULL()
-            ];
+        if (next_char === '[') {
+            let array_values = [];
+            let s = str.substr(tries + 1);
+            do {
+                let c = this.T_COMPARE_VALUE(s);
+                if (!c) {
+                    throw ['Expected T_COMPARE_VALUE', s.length];
+                }
+                s = s.substr(c[0]);
+                array_values.push(c[1]);
+                let sep = this.T_SEPERATOR(s);
+                if (!sep) {
+                    let term = s.match(/^\s*\]/);
+                    if (term) {
+                        return [
+                            str.length - s.length + term[0].length,
+                            new CONSTANTS_ARRAY(this, array_values)
+                        ];
+                    } else {
+                        throw ['Expected T_CONSTANT, T_SEPERATOR or closing array "]" character', s.length];
+                    }
+                } else {
+                    s = s.substr(sep[0]);
+                }
+            } while (true);
         }
-
-        let match;
-        let data;
-        switch (next_char) {
-            case '"':
-                match = str.match(/^\s*"((?:[^"\\]?(?:\\[\x00-\xFF])?)*)"/);
-                if (!match) {
-                    return false;
-                }
-                match[1] = match[1].replace(/((?:^|[^\\])(\\\.)*)\\n/, "$1\n");
-                match[1] = match[1].replace(/((?:^|[^\\])(\\\\)*)\\r/, "$1\r");
-                match[1] = match[1].replace(/((?:^|[^\\])(\\\\)*)\\t/, "$1\t");
-                data = match[1].replace(/\\([\x00-\xFF])/, '$1');
-                break;
-            case "'":
-                match = str.match(/^\s*'((?:[^'\\]?(?:\\[\x00-\xFF])?)*)'/);
-                if (!match) {
-                    return false;
-                }
-                match[1] = match[1].replace(/((?:^|[^\\])(\\\.)*)\\n/, "$1\n");
-                match[1] = match[1].replace(/((?:^|[^\\])(\\\\)*)\\r/, "$1\r");
-                match[1] = match[1].replace(/((?:^|[^\\])(\\\\)*)\\t/, "$1\t");
-                data = match[1].replace(/\\([\x00-\xFF])/, '$1');
-                break;
-            default:
-                match = str.match(/^\s*([a-zA-Z0-9_\-.]+)/);
-                if (!match) {
-                    return false;
-                }
-                data = match[1];
-                break;
-        }
-        return [
-            match[0].length,
-            new CONSTANT(this, data)
-        ];
+        return false;
     }
 
     /*
      * Is a field in a table
      */
     T_FIELD (str, table_ref) {
-        let match = str.match(/^[a-zA-Z0-9_]+/);
+        let match = str.match(/^\s*([a-zA-Z_][a-zA-Z0-9_]*)/);
         if (!match) {
             return false;
         }
@@ -280,7 +318,7 @@ export class PARSER {
         }
 
         try {
-            var field = new FIELD(this, match[0], table_ref);
+            var field = new FIELD(this, match[1], table_ref);
         } catch (e) {
             throw [e, str.length, [FIELD]];
         }
@@ -294,7 +332,7 @@ export class PARSER {
             ];
             //throw ["Expected T_COMPARITOR", str.length];
         }
-        if (comparitor[1] instanceof NO_VALUE) {
+        if (comparitor[1].isInstanceOf(NO_VALUE)) {
             return [
                 match[0].length + comparitor[0],
                 field
@@ -320,7 +358,7 @@ export class PARSER {
      * Is a function in sql
      */
     T_FUNCTION (str) {
-        var match = str.match(/^([a-zA-Z0-9_]+)\(\s*/);
+        var match = str.match(/^\s*([a-zA-Z0-9_]+)\(/);
         if (!match) {
             return false;
         }
@@ -337,17 +375,17 @@ export class PARSER {
         str = str.substring(match[0].length);
         for (let i = 0; true; i++) {
             if (found_args.length >= max_args) {
-                throw ["Function '" + func.getFuncName() + "' cannot have more than " + max_args.toString() + " args", str.length, []];
+                throw [`Function '${ func.getFuncName() }' cannot have more than ${ max_args.toString() } args`, str.length, []];
             }
             let general = this.T_GENERAL(str);
             if (!general && found_args.length < min_args) {
-                throw ["Function '" + func.getFuncName() + "' expected " + min_args.toString() + " but got " + found_args.length.toString() + " args", str.length, []]; 
+                throw [`Function '${ func.getFuncName() }' expected ${ min_args.toString() } but got ${ found_args.length.toString() } args`, str.length, []]; 
             }
             if (!general) {
                 break;
             }
             sum_length += general[0];
-            if (general instanceof GROUP) {
+            if (general[1].isInstanceOf(GROUP)) {
                 general.setNeedWrap(false);
             }
             found_args.push(general[1]);
@@ -360,7 +398,7 @@ export class PARSER {
             str = str.substring(seperator[0]);
             sum_length += seperator[0];
         }
-        let closer = this.T_GROUP_CLOSER(str);
+        let closer = this.T_FUNCTION_CLOSER(str);
         if (!closer) {
             throw ["Open function group tag without close tag", str.length];
         }
@@ -375,7 +413,7 @@ export class PARSER {
             ];
             //throw ["Expected T_COMPARITOR", str.length];
         }
-        if (comparitor[1] instanceof NO_VALUE) {
+        if (comparitor[1].isInstanceOf(NO_VALUE)) {
             return [
                 match[0].length + sum_length + closer[0] + comparitor[0],
                 func
@@ -383,12 +421,9 @@ export class PARSER {
         }
         str = str.substring(comparitor[0]);
         let value = this.T_COMPARE_VALUE(str);
-        if (!value) {
-            throw ["Expected T_COMPARE_VALUE", str.length];
-        }
         comparitor[1].setLeft(func);
         comparitor[1].setRight(value[1]);
-    
+
         return [
             match[0].length + sum_length + closer[0] + comparitor[0] + value[0],
             comparitor[1]
@@ -396,47 +431,57 @@ export class PARSER {
     }
 
     /*
-     * Is a null literal. "-" character.
-     */
-    T_NULL (str) {
-        if (str.substr(0, 1) == '-') {
-            return [1, new NULL(this)];
-        }
-        return false;
-    }
-
-    /*
      * Is a string constant. The matching string will be exactly sent as is. Also good for binary data.
      */
     T_CONSTANT (str) {
-        let chr = str.substr(0, 1);
+        let tries = 0;
+        let next_char;
+        // Ignore spaces
+        while ((next_char = str.substr(tries, 1)) && (next_char === ' ' || next_char === "\r" || next_char === "\n" || next_char === "\t")) {
+            tries++;
+        }
         let match;
-        switch (chr) {
+        switch (next_char) {
             case '"':
-                match = str.match(/^"((?:[^"\\]?(?:\\[\x00-\xFF])?)*)"/);
+                match = str.match(/^\s*"((?:[^"\\]?(?:\\[\x00-\xFF])?)*)"/);
                 // Make sure we have data
                 if (match && match.length && match[1].length) {
-                    match[1] = match[1].replace(/((?:^|[^\\])(\\\.)*)\\n/, "$1\n");
-                    match[1] = match[1].replace(/((?:^|[^\\])(\\\\)*)\\r/, "$1\r");
-                    match[1] = match[1].replace(/((?:^|[^\\])(\\\\)*)\\t/, "$1\t");
-                    match[1] = match[1].replace(/\\([\x00-\xFF])/, '$1');
+                    match[1] = match[1].replace(/((?:^|[^\\])(\\\.)*)\\n/g, "$1\n");
+                    match[1] = match[1].replace(/((?:^|[^\\])(\\\\)*)\\r/g, "$1\r");
+                    match[1] = match[1].replace(/((?:^|[^\\])(\\\\)*)\\t/g, "$1\t");
+                    match[1] = match[1].replace(/\\([\x00-\xFF])/g, '$1');
                 }
                 break;
             case "'":
-                match = str.match(/^'((?:[^'\\]?(?:\\[\x00-\xFF])?)*)'/);
+                match = str.match(/^\s*'((?:[^'\\]?(?:\\[\x00-\xFF])?)*)'/);
                 // Make sure we have data
                 if (match && match.length && match[1].length) {
-                    match[1] = match[1].replace(/((?:^|[^\\])(\\\.)*)\\n/, "$1\n");
-                    match[1] = match[1].replace(/((?:^|[^\\])(\\\\)*)\\r/, "$1\r");
-                    match[1] = match[1].replace(/((?:^|[^\\])(\\\\)*)\\t/, "$1\t");
-                    match[1] = match[1].replace(/\\([\x00-\xFF])/, '$1');
+                    match[1] = match[1].replace(/((?:^|[^\\])(\\\.)*)\\n/g, "$1\n");
+                    match[1] = match[1].replace(/((?:^|[^\\])(\\\\)*)\\r/g, "$1\r");
+                    match[1] = match[1].replace(/((?:^|[^\\])(\\\\)*)\\t/g, "$1\t");
+                    match[1] = match[1].replace(/\\([\x00-\xFF])/g, '$1');
+                }
+                break;
+            case '@':
+                match = str.match(/\s*@([a-zA-Z0-9\-_]+)/);
+                if (match) {
+                    return [
+                        match[0].length,
+                        new VARIABLE(this, match[1])
+                    ];
                 }
                 break;
             case '-':
-                return [1, new NULL(this)];
+                if (!/[0-9]/.test(str.substr(tries + 1, 1))) {
+                    return [1 + tries, new NULL(this)];
+                }
         }
         if (!match) {
-            return false;
+            // see if it's a constant numeric
+            match = str.match(/^\s*(-?[0-9]+(\.[0-9]+)?)/);
+            if (!match) {
+                return false;
+            }
         }
         return [
             match[0].length,
@@ -447,9 +492,9 @@ export class PARSER {
         let op_order = [
             this.T_TABLE_REF,
             this.T_FUNCTION,
+            this.T_CONSTANT,
             this.T_FIELD,
             this.T_GROUP_OPENER,
-            this.T_CONSTANT,
             /*this.T_SUBQUERY_OPENER*/
         ];
         let op_len = op_order.length;
@@ -468,7 +513,7 @@ export class PARSER {
                 let sep;
                 str = str.substring(found[0]);
                 used_str_len += found[0];
-                if (op_codes.length && !(op_codes[op_codes.length - 1] instanceof SEPERATORS)) {
+                if (op_codes.length && !(op_codes[op_codes.length - 1].isInstanceOf(SEPERATORS))) {
                     throw [`Expected space, "|"${ (allow_seperator) ? ' or ","': '' }`, str.length + found[0]];
                 }
                 op_codes.push(found[1]);
@@ -490,18 +535,18 @@ export class PARSER {
                     op_codes.push(sep[1]);
                 }
             }
-        } while (found && str.length != 0);
+        } while (found && str.length !== 0);
 
         // Removes any trailing ANDs
         while (op_codes.length) {
-            if (op_codes[op_codes.length - 1] instanceof AND) {
+            if (op_codes[op_codes.length - 1] && (op_codes[op_codes.length - 1].isInstanceOf(AND))) {
                 op_codes.pop();
             } else {
                 break;
             }
         }
 
-        if (op_codes.length && op_codes[op_codes.length - 1] instanceof SEPERATORS) {
+        if (op_codes.length && (op_codes[op_codes.length - 1].isInstanceOf(SEPERATORS))) {
             throw ["Cannot terminate this section with a seperator", str.length];
         }
     
@@ -542,7 +587,16 @@ export class PARSER {
             general[1]
         ];
     }
-
+    T_FUNCTION_CLOSER (str) {
+        let match = str.match(/^\s*\)/);
+        if (!match) {
+            return false;
+        }
+        return [
+            match[0].length,
+            true
+        ];
+    }
     /*
      * Represents a closed prenthesis ")"
      */
@@ -589,7 +643,7 @@ export class PARSER {
      * Is the pipe "|" character
      */
     T_OR (str) {
-        let match = str.match(/^\s*\|\s*/);
+        let match = str.match(/^\s*\|/);
         if (!match) {
             return false;
         }
@@ -603,7 +657,7 @@ export class PARSER {
      * Is the comma "," character
      */
     T_SEPERATOR (str) {
-        let match = str.match(/^\s*,\s*/);
+        let match = str.match(/^\s*,/);
         if (!match) {
             return false;
         }

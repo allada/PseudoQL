@@ -42,7 +42,7 @@ export class FUNCTION extends OPCODE {
         this._arguments.forEach((v) => {
             args.push(v.getSQL(query_obj));
         });
-        return FUNCTION.buildFromFormat(this.getFormat(), args, this._arguments);
+        return this.buildFromFormat(this.getFormat(), args, this._arguments, query_obj);
     }
     needsGroup () {
         if (this._needs_group_cache !== null) {
@@ -58,12 +58,12 @@ export class FUNCTION extends OPCODE {
         }
         return this._needs_group_cache = false;
     }
-    static buildFromFormat (format_arg, args, orig_args) {
+    buildFromFormat (format_arg, args, orig_args, query_obj) {
         let out = [];
 
         switch(typeof format_arg){
             case 'function':
-                return format_arg(args, orig_args);
+                return format_arg.call(this, args, orig_args, query_obj);
                 break;
             case 'string':
                 // Break does not need to go here because it needs to continue to 'object' section
@@ -72,7 +72,7 @@ export class FUNCTION extends OPCODE {
                 // Check if is not array type
                 if (!(format_arg instanceof Array)) {
                     if (format_arg[args.length] !== undefined) {
-                        return this.buildFromFormat(format_arg[args.length], args, orig_args);
+                        return this.buildFromFormat(format_arg[args.length], args, orig_args, query_obj);
                     } else {
                         throw `Could not find ${ format_arg[args.length] } in format config for function`;
                     }
@@ -91,11 +91,11 @@ export class FUNCTION extends OPCODE {
                             }
                             break;
                         case 'function':
-                            out.push(format(args, orig_args));
+                            out.push(format.call(this, args, orig_args, query_obj));
                             break;
                         case 'object':
                             if (format[args.length]) {
-                                return this.buildFromFormat(format[args.length], args);
+                                return this.buildFromFormat(format[args.length], args, orig_args, query_obj);
                             } else {
                                 throw `Format '${JSON.stringify(format)}' does not have key of '${args.length}'`;
                             }

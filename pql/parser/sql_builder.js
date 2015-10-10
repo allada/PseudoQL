@@ -56,7 +56,7 @@ export class SQL_BUILDER {
         this.getOrderBys().forEach((v, k) => {
             let code = k.getCodes().getSQL(this);
             if (code) {
-                orders.push(code + (v.toLowerCase() === 'desc' ? ' DESC' : ' ASC' ));
+                orders.push(code + ((v !== null && v !== undefined && v.toLowerCase() === 'desc') ? ' DESC' : ' ASC' ));
             }
         });
         let order_by_str = '';
@@ -110,7 +110,7 @@ export class SQL_BUILDER {
         }
 
         // Pop last item off the array and clone it so it doesn't count itself
-        let parser = new PARSER(link_obj.psudoql, this.getTable(), false, this.getQuery().getConfig(), table_ary.slice(0, table_ary.length - 1));
+        let parser = new PARSER(link_obj.pql, this.getTable(), false, this.getQuery().getConfig(), table_ary.slice(0, table_ary.length - 1));
         // This needs to happen here to ensure the tables get added in the proper order
         parser.getCodes().getSQL(this);
         
@@ -126,9 +126,9 @@ export class SQL_BUILDER {
         let cur_obj = db_map[this.getTable()];
         let cur_link_obj;
         table_ary.forEach((v) => {
-            if (cur_obj.linkTo.hasOwnProperty(v)) {
+            if (cur_obj.linkTo && cur_obj.linkTo.hasOwnProperty(v)) {
                 cur_link_obj = cur_obj.linkTo[v];
-            } else if (cur_obj.linkFrom.hasOwnProperty(v)) {
+            } else if (cur_obj.linkFrom && cur_obj.linkFrom.hasOwnProperty(v)) {
                 cur_link_obj = cur_obj.linkFrom[v];
             } else {
                 throw `No table link from "${ cur_obj.name }" to table "${ v }"`;
