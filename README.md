@@ -7,7 +7,7 @@ Live Demo: http://allada.github.io/PseudoQL/
 - Make it easier and faster to develop for relational databases.
 - Make a more-universal query language which should make it easier to deploy the same code on multiple database engines.
 - Faster query building by introducing compare shortcuts and smart-type-recognition and many other features.
-- Safer query building by allowing variable injection (much like stored-queries) and hackable opt-codes.
+- Safer query building by allowing variable injection (much like prepared-queries) and hackable opt-codes.
 - Allow front-end users a standard simple language to make complex custom queries.
 - Auto join on tables based on pre-configured (or runtime-configured) database relation map.
 - Auto HAVING vs WHERE recognition w/ ability to force items into HAVING.
