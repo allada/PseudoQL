@@ -38,7 +38,7 @@
                         <th>Avail Functions</th>
                     </tr>
                     <tr>
-                        <td style="height:230px;"><div style="overflow:auto;height:100%;width:100%;"><table id="function-list" style="white-space:nowrap;"></table></div></td>
+                        <td style="height:230px;"><div style="overflow:auto;height:230px;;width:100%;"><table id="function-list" style="white-space:nowrap;"></table></div></td>
                     </tr>
                 </table></td>
             </tr>
@@ -122,11 +122,10 @@
                     table_el    = document.getElementById('table');
                     group_by_el = document.getElementById('group_by');
     
-                    select_names = document.getElementsByName('select_names[]');
-                    select_values = document.getElementsByName('select_values[]');
-    
-                    order_dirs = document.getElementsByName('order_dirs[]');
-                    order_values = document.getElementsByName('order_values[]');
+                    select_names = []; // set below
+                    select_values = []; // set below
+                    order_dirs = [];
+                    order_values = [];
 
                     PQL.setDefaultConfig(Config);
                     if (!table_el.firstChild) {
@@ -151,13 +150,21 @@
                     listenerObjects.add(query_el);
                     listenerObjects.add(table_el);
                     listenerObjects.add(group_by_el);
-    
-                    for (let i of Object.keys(select_names)) {
+
+                    let select_names_els = document.getElementsByName('select_names[]');
+                    let select_values_els = document.getElementsByName('select_values[]');
+                    for (let i = 0; i < select_names_els.length; i++ ) {
+                        select_names.push(select_names_els[i]);
+                        select_values.push(select_values_els[i]);
                         listenerObjects.add(select_names[i]);
                         listenerObjects.add(select_values[i]);
                     }
 
-                    for (let i of Object.keys(order_values)) {
+                    let order_dirs_els = document.getElementsByName('order_dirs[]');
+                    let order_values_els = document.getElementsByName('order_values[]');
+                    for (let i = 0; i < order_values_els.length; i++ ) {
+                        order_dirs.push(order_dirs_els[i]);
+                        order_values.push(order_values_els[i]);
                         listenerObjects.add(order_dirs[i]);
                         listenerObjects.add(order_values[i]);
                     }
