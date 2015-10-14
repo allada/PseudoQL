@@ -1,8 +1,8 @@
 import { OPCODE } from './../opcode.js';
 
 export class COMPARITOR extends OPCODE {
-    constructor () {
-        super (...arguments);
+    constructor (...args) {
+        super(...args);
         this._needs_group_cache = null;
     }
     get left () {

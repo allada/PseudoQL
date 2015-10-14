@@ -1,17 +1,19 @@
 # PseudoQL (PQL)
 PseudoQL is a Pseudo-Query-Language.
 
+Live Demo: http://allada.github.io/PseudoQL/
+
 ###PseudoQL goals:###
 - Make it easier and faster to develop for relational databases.
 - Make a more-universal query language which should make it easier to deploy the same code on multiple database engines.
 - Faster query building by introducing compare shortcuts and smart-type-recognition and many other features.
-- Safer query building by allowing variable injection (much like stored-queries) and hackable opt-codes.
+- Safer query building by allowing variable injection (much like prepared-queries) and hackable opt-codes.
 - Allow front-end users a standard simple language to make complex custom queries.
 - Auto join on tables based on pre-configured (or runtime-configured) database relation map.
 - Auto HAVING vs WHERE recognition w/ ability to force items into HAVING.
 
 ###Reasoning###
-One of the problems with SQL is that each database engine uses a slightly different version of SQL. For example, MySQL uses `` (back-ticks) to designate an identifier (table name, database name, column name, exc...) and SQL server uses [] (brackets) and PostgreSQL uses "" (double quotes). Although this is not a major issue to code around it, there are other situations which make moving from one database to another a very large hassle like  the random (RAND(), RANDOM(), RND(), exc...) function; MySQL aliases RAND() and RANDOM() as the same function producing a number between 0 and 1 (with decimal), where PostgreSQL does not have RAND() function instead uses RANDOM() to do the same thing... However SQL server does not have RANDOM() function and instead uses RAND(). This kind of example can be quite difficult to code around because a "new" database engine may spawn and uses arguments in a different order or may not have the function at all and expect the user to do the grunt work to get the same results or the inverse may happen.
+One of the problems with SQL is that each database engine uses a slightly different version of SQL. For example, MySQL uses `` (back-ticks) to designate an identifier (table name, database name, column name, exc...) and SQL server uses \[\] (brackets) and PostgreSQL uses "" (double quotes). Although this is not a major issue to code around it, there are other situations which make moving from one database to another a very large hassle like  the random (RAND(), RANDOM(), RND(), exc...) function; MySQL aliases RAND() and RANDOM() as the same function producing a number between 0 and 1 (with decimal), where PostgreSQL does not have RAND() function instead uses RANDOM() to do the same thing... However SQL server does not have RANDOM() function and instead uses RAND(). This kind of example can be quite difficult to code around because a "new" database engine may spawn and uses arguments in a different order or may not have the function at all and expect the user to do the grunt work to get the same results or the inverse may happen.
 
 Security is also an issue. Although some database engines have "prepared-statements" it can be slow if many queries are being ran at once and some database engines do not support prepared-statements at all. This causes many developers to use libraries to escape their code for them or escape their code them selves which for novice developers can cause huge security holes.
 
