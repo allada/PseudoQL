@@ -28,6 +28,8 @@ var PQL = (function () {
             var selects = _ref.selects;
             var orderBys = _ref.orderBys;
             var variables = _ref.variables;
+            var limit = _ref.limit;
+            var offset = _ref.offset;
 
             var query_parser = new _parserJs.PARSER(query, table, false, this.defaultConfig, [], variables);
             if (query_parser.hasError()) {
@@ -90,7 +92,9 @@ var PQL = (function () {
                 table: table,
                 group: group_parser,
                 selects: select_parsers,
-                orderBys: order_by_parsers
+                orderBys: order_by_parsers,
+                limit: limit,
+                offset: offset
             });
             return sb.toString();
         }

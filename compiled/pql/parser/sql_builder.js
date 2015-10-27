@@ -19,6 +19,8 @@ var SQL_BUILDER = (function () {
         var group = _ref.group;
         var selects = _ref.selects;
         var orderBys = _ref.orderBys;
+        var limit = _ref.limit;
+        var offset = _ref.offset;
 
         _classCallCheck(this, SQL_BUILDER);
 
@@ -27,6 +29,8 @@ var SQL_BUILDER = (function () {
         this._group = group;
         this._selects = selects;
         this._orderBys = orderBys;
+        this._limit = limit;
+        this._offset = offset;
 
         this._table_refs = new Map();
         this._linked_tables = [];
@@ -62,6 +66,16 @@ var SQL_BUILDER = (function () {
         key: 'getTableName',
         value: function getTableName() {
             return this.getQuery().getConfig().DB_MAP[this.getTable()].name;
+        }
+    }, {
+        key: 'getLimit',
+        value: function getLimit() {
+            return this._limit;
+        }
+    }, {
+        key: 'getOffset',
+        value: function getOffset() {
+            return this._offset;
         }
     }, {
         key: 'toString',
@@ -134,7 +148,22 @@ var SQL_BUILDER = (function () {
                     join_str = '\n\t' + join_ary.join('\n\t');
                 }
             }
-            return 'SELECT\n\t' + selects.join(',\n\t') + '\nFROM ' + this.constructor.escapeDBTableName(this.getTableName(), true) + join_str + query_str + group_str + having_str + order_by_str;
+
+            var limit = this.getLimit();
+            var offset = this.getOffset();
+            if (limit !== undefined && limit !== null) {
+                limit = '\nLIMIT ' + parseInt(limit);
+                if (offset !== undefined && offset !== null) {
+                    offset = ' OFFSET ' + parseInt(offset);
+                } else {
+                    offset = '';
+                }
+            } else {
+                limit = '';
+                offset = '';
+            }
+
+            return 'SELECT\n\t' + selects.join(',\n\t') + '\nFROM ' + this.constructor.escapeDBTableName(this.getTableName(), true) + join_str + query_str + group_str + having_str + order_by_str + limit + offset;
         }
     }, {
         key: '_addTableLink',
