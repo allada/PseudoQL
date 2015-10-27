@@ -9,7 +9,7 @@ export class PQL {
         PQL._defaultConfig = v;
     }
 
-    static getSQL ({ query, table, group, selects, orderBys, variables }) {
+    static getSQL ({ query, table, group, selects, orderBys, variables, limit, offset }) {
         var query_parser = new PARSER(query, table, false, this.defaultConfig, [], variables);
         if (query_parser.hasError()) {
             throw query_parser.getError();
@@ -72,6 +72,8 @@ export class PQL {
             group: group_parser,
             selects: select_parsers,
             orderBys: order_by_parsers,
+            limit: limit,
+            offset: offset,
         });
         return sb.toString();
     }

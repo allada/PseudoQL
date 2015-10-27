@@ -1,11 +1,13 @@
 import { PARSER } from './../parser.js';
 export class SQL_BUILDER {
-    constructor ({ query, table, group, selects, orderBys }) {
+    constructor ({ query, table, group, selects, orderBys, limit, offset }) {
         this._query = query;
         this._table = table;
         this._group = group;
         this._selects = selects;
         this._orderBys = orderBys;
+        this._limit = limit;
+        this._offset = offset;
 
         this._table_refs = new Map;
         this._linked_tables = [];
@@ -28,6 +30,12 @@ export class SQL_BUILDER {
     }
     getTableName () {
         return this.getQuery().getConfig().DB_MAP[this.getTable()].name;
+    }
+    getLimit () {
+        return this._limit;
+    }
+    getOfffset () {
+        return this._offset;
     }
     toString () {
         let query_str = this.getQuery().getWhereCodes().getSQL(this);
@@ -74,7 +82,22 @@ export class SQL_BUILDER {
                 join_str = '\n\t' + join_ary.join('\n\t');
             }
         }
-        return 'SELECT\n\t' + selects.join(',\n\t') + '\nFROM ' + this.constructor.escapeDBTableName(this.getTableName(), true) + join_str + query_str + group_str + having_str + order_by_str;
+
+        let limit = this.getLimit();
+        let offset = this.getOffset();
+        if (limit !== undefined && limit !== null) {
+            limit = '\nLIMIT ' + parseInt(limit);
+            if (offset !== undefined && offset !== null) {
+                offset = ' OFFSET ' + parseInt(offset);
+            } else {
+                offset = '';
+            }
+        } else {
+            limit = '';
+            offset = '';
+        }
+        
+        return 'SELECT\n\t' + selects.join(',\n\t') + '\nFROM ' + this.constructor.escapeDBTableName(this.getTableName(), true) + join_str + query_str + group_str + having_str + order_by_str + limit + offset;
     }
     _addTableLink (table_ary) {
         let table_str = this.constructor.tableArrayToString(table_ary);
