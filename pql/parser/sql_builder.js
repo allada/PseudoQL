@@ -34,7 +34,7 @@ export class SQL_BUILDER {
     getLimit () {
         return this._limit;
     }
-    getOfffset () {
+    getOffset () {
         return this._offset;
     }
     toString () {
