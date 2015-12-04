@@ -26,6 +26,10 @@ export class COMPARITOR extends OPCODE {
         this.right = v;
         return this;
     }
+    setNeedsWrapped (val) {
+        this._needs_wrapped = val;
+        return this;
+    }
     needsGroup () {
         if (this._needs_group_cache !== null) {
             return this._needs_group_cache;

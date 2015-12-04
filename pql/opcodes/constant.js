@@ -13,6 +13,7 @@ export class CONSTANT extends OPCODE {
     }
     setForceNumeric (force) {
         this._force_numeric = !!force;
+        return this;
     }
     getValue () {
         return this._value;

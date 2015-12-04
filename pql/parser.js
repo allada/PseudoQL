@@ -12,15 +12,17 @@ import { NO_VALUE }     from './opcodes/comparitors/no_value.js';
 import { VARIABLE }     from './opcodes/variable.js';
 import { CONSTANTS_ARRAY } from './opcodes/constants_array.js';
 import { TABLE_REF }    from './parser/table_ref.js';
+import { DATA_TYPES }   from './data_types.js';
 
 export class PARSER {
-    constructor (query, ref_table, allow_seperator = false, config = null, table_refs = [], variables = {}) {
+    constructor (query, ref_table, allow_seperator = false, config = null, table_refs = [], variables = {}, allow_compares = false) {
         this._hasError      = false;
         this._error         = null;
         this._codes         = [];
         this._comparitors   = new COMPARITORS(config.COMPARITORS);
         this._table_refs    = table_refs;
         this._variables     = {};
+        this._allow_compares= !!allow_compares;
 
         // Defaults to false
         allow_seperator     = !!allow_seperator;
@@ -61,6 +63,9 @@ export class PARSER {
                 this.assignVariables(variables);
             }
         }
+    }
+    getAllowCompares () {
+        return this._allow_compares;
     }
     assignVariables (var_list_obj) {
         for (let var_name in var_list_obj) {
@@ -332,6 +337,7 @@ export class PARSER {
             ];
             //throw ["Expected T_COMPARITOR", str.length];
         }
+
         if (comparitor[1].isInstanceOf(NO_VALUE)) {
             return [
                 match[0].length + comparitor[0],
@@ -347,6 +353,17 @@ export class PARSER {
         comparitor[1]
             .setLeft(field)
             .setRight(value[1]);
+
+        if (!this.getAllowCompares()) {
+            let func = new FUNCTION(this, 'if');
+            func.setArgs([
+                comparitor[1],
+                (new CONSTANT(this, '1')).setForceNumeric(true),
+                (new CONSTANT(this, '0')).setForceNumeric(true),
+            ]);
+            func.setType(DATA_TYPES.BOOLEAN);
+            comparitor[1] = func;
+        }
 
         return [
             match[0].length + comparitor[0] + value[0],
@@ -413,6 +430,7 @@ export class PARSER {
             ];
             //throw ["Expected T_COMPARITOR", str.length];
         }
+
         if (comparitor[1].isInstanceOf(NO_VALUE)) {
             return [
                 match[0].length + sum_length + closer[0] + comparitor[0],
@@ -423,6 +441,17 @@ export class PARSER {
         let value = this.T_COMPARE_VALUE(str);
         comparitor[1].setLeft(func);
         comparitor[1].setRight(value[1]);
+
+        if (!this.getAllowCompares()) {
+            let func = new FUNCTION(this, 'if');
+            func.setArgs([
+                comparitor[1],
+                new CONSTANT(this, '1'),
+                new CONSTANT(this, '0'),
+            ]);
+            func.setType(DATA_TYPES.BOOLEAN);
+            comparitor[1] = func;
+        }
 
         return [
             match[0].length + sum_length + closer[0] + comparitor[0] + value[0],
