@@ -156,7 +156,7 @@ window.QUnit.test('Functions - count', function (assert) {
     query: 'count(id) > 21',
     table: 'table1'
   });
-  assert.ok(query.replace(/\s+/g, ' ') === 'SELECT * FROM "TablE1" GROUP BY "TablE1"."id" HAVING COUNT("TablE1"."id") > \'21\'', "Passed!");
+  assert.ok(query.replace(/\s+/g, ' ') === 'SELECT * FROM "TablE1" GROUP BY "TablE1"."id" HAVING COUNT("TablE1"."id") > 21', "Passed!");
 });
 window.QUnit.test('Functions - group_concat 1', function (assert) {
   var query = _pqlPQLJs.PQL.getSQL({

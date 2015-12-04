@@ -36,12 +36,15 @@ var _opcodesConstants_arrayJs = require('./opcodes/constants_array.js');
 
 var _parserTable_refJs = require('./parser/table_ref.js');
 
+var _data_typesJs = require('./data_types.js');
+
 var PARSER = (function () {
     function PARSER(query, ref_table) {
         var allow_seperator = arguments.length <= 2 || arguments[2] === undefined ? false : arguments[2];
         var config = arguments.length <= 3 || arguments[3] === undefined ? null : arguments[3];
         var table_refs = arguments.length <= 4 || arguments[4] === undefined ? [] : arguments[4];
         var variables = arguments.length <= 5 || arguments[5] === undefined ? {} : arguments[5];
+        var allow_compares = arguments.length <= 6 || arguments[6] === undefined ? false : arguments[6];
 
         _classCallCheck(this, PARSER);
 
@@ -51,6 +54,7 @@ var PARSER = (function () {
         this._comparitors = new _parserComparitorsJs.COMPARITORS(config.COMPARITORS);
         this._table_refs = table_refs;
         this._variables = {};
+        this._allow_compares = !!allow_compares;
 
         // Defaults to false
         allow_seperator = !!allow_seperator;
@@ -94,6 +98,11 @@ var PARSER = (function () {
     }
 
     _createClass(PARSER, [{
+        key: 'getAllowCompares',
+        value: function getAllowCompares() {
+            return this._allow_compares;
+        }
+    }, {
         key: 'assignVariables',
         value: function assignVariables(var_list_obj) {
             for (var var_name in var_list_obj) {
@@ -437,6 +446,7 @@ var PARSER = (function () {
                 return [match[0].length, field];
                 //throw ["Expected T_COMPARITOR", str.length];
             }
+
             if (comparitor[1].isInstanceOf(_opcodesComparitorsNo_valueJs.NO_VALUE)) {
                 return [match[0].length + comparitor[0], field];
             }
@@ -447,6 +457,13 @@ var PARSER = (function () {
                 throw ["Expected T_COMPARE_VALUE", str.length, [_opcodesConstantJs.CONSTANT, _opcodesNullJs.NULL]];
             }
             comparitor[1].setLeft(field).setRight(value[1]);
+
+            if (!this.getAllowCompares()) {
+                var func = new _opcodesFunctionJs.FUNCTION(this, 'if');
+                func.setArgs([comparitor[1], new _opcodesConstantJs.CONSTANT(this, '1').setForceNumeric(true), new _opcodesConstantJs.CONSTANT(this, '0').setForceNumeric(true)]);
+                func.setType(_data_typesJs.DATA_TYPES.BOOLEAN);
+                comparitor[1] = func;
+            }
 
             return [match[0].length + comparitor[0] + value[0], comparitor[1]];
         }
@@ -509,6 +526,7 @@ var PARSER = (function () {
                 return [match[0].length + sum_length + closer[0], func];
                 //throw ["Expected T_COMPARITOR", str.length];
             }
+
             if (comparitor[1].isInstanceOf(_opcodesComparitorsNo_valueJs.NO_VALUE)) {
                 return [match[0].length + sum_length + closer[0] + comparitor[0], func];
             }
@@ -516,6 +534,13 @@ var PARSER = (function () {
             var value = this.T_COMPARE_VALUE(str);
             comparitor[1].setLeft(func);
             comparitor[1].setRight(value[1]);
+
+            if (!this.getAllowCompares()) {
+                var _func = new _opcodesFunctionJs.FUNCTION(this, 'if');
+                _func.setArgs([comparitor[1], new _opcodesConstantJs.CONSTANT(this, '1'), new _opcodesConstantJs.CONSTANT(this, '0')]);
+                _func.setType(_data_typesJs.DATA_TYPES.BOOLEAN);
+                comparitor[1] = _func;
+            }
 
             return [match[0].length + sum_length + closer[0] + comparitor[0] + value[0], comparitor[1]];
         }

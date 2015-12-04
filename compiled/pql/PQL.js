@@ -31,7 +31,7 @@ var PQL = (function () {
             var limit = _ref.limit;
             var offset = _ref.offset;
 
-            var query_parser = new _parserJs.PARSER(query, table, false, this.defaultConfig, [], variables);
+            var query_parser = new _parserJs.PARSER(query, table, false, this.defaultConfig, [], variables, true);
             if (query_parser.hasError()) {
                 throw query_parser.getError();
             }
@@ -39,7 +39,7 @@ var PQL = (function () {
             if (group === undefined) {
                 group = 'id';
             }
-            var group_parser = new _parserJs.PARSER(group, table, true, this.defaultConfig, [], variables);
+            var group_parser = new _parserJs.PARSER(group, table, true, this.defaultConfig, [], variables, false);
             if (group_parser.hasError()) {
                 throw group_parser.getError();
             }
@@ -47,7 +47,7 @@ var PQL = (function () {
             var select_parsers = new Map();
             if (selects instanceof Map) {
                 selects.forEach(function (v, k) {
-                    var val = new _parserJs.PARSER(v, table, false, _this.defaultConfig, [], variables);
+                    var val = new _parserJs.PARSER(v, table, false, _this.defaultConfig, [], variables, false);
                     if (val.hasError()) {
                         throw val.getError();
                     }
@@ -56,7 +56,7 @@ var PQL = (function () {
             } else {
                 for (var k in selects) {
                     if (selects.hasOwnProperty(k)) {
-                        var v = new _parserJs.PARSER(selects[k], table, false, this.defaultConfig, [], variables);
+                        var v = new _parserJs.PARSER(selects[k], table, false, this.defaultConfig, [], variables, false);
                         if (v.hasError()) {
                             throw v.getError();
                         }
@@ -69,7 +69,7 @@ var PQL = (function () {
             if (orderBys instanceof Map) {
                 orderBys.forEach(function (v, k) {
                     // This one is backwards... be warned that k is the string v is the [desc, asc]
-                    var val = new _parserJs.PARSER(k, table, false, _this.defaultConfig, [], variables);
+                    var val = new _parserJs.PARSER(k, table, false, _this.defaultConfig, [], variables, false);
                     if (val.hasError()) {
                         throw val.getError();
                     }
@@ -78,7 +78,7 @@ var PQL = (function () {
             } else {
                 for (var k in orderBys) {
                     if (orderBys.hasOwnProperty(k)) {
-                        var v = new _parserJs.PARSER(k, table, false, this.defaultConfig, [], variables);
+                        var v = new _parserJs.PARSER(k, table, false, this.defaultConfig, [], variables, false);
                         if (v.hasError()) {
                             throw v.getError();
                         }
@@ -94,7 +94,8 @@ var PQL = (function () {
                 selects: select_parsers,
                 orderBys: order_by_parsers,
                 limit: limit,
-                offset: offset
+                offset: offset,
+                variables: variables
             });
             return sb.toString();
         }

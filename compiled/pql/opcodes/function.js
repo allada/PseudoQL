@@ -14,6 +14,8 @@ function _inherits(subClass, superClass) { if (typeof superClass !== 'function' 
 
 var _opcodeJs = require('./opcode.js');
 
+var _data_typesJs = require('../data_types.js');
+
 var FUNCTION = (function (_OPCODE) {
     _inherits(FUNCTION, _OPCODE);
 
@@ -23,6 +25,7 @@ var FUNCTION = (function (_OPCODE) {
         _get(Object.getPrototypeOf(FUNCTION.prototype), 'constructor', this).call(this, pql_obj, fn_name);
 
         this._needs_group_cache = null;
+        this._return_type = null;
         this.setFunctionName(fn_name);
     }
 
@@ -62,6 +65,7 @@ var FUNCTION = (function (_OPCODE) {
                 throw 'Function \'' + fn_name + '\' is not allowed or not defined';
             }
             this._fn_settings = this.getPqlObj().getConfig().FUNCTION_MAP[fn_name];
+            this.setType(this._fn_settings.return_type || _data_typesJs.DATA_TYPES.ANY);
             this._fn_name = fn_name;
         }
     }, {
@@ -78,6 +82,17 @@ var FUNCTION = (function (_OPCODE) {
                 args.push(v.getSQL(query_obj));
             });
             return this.buildFromFormat(this.getFormat(), args, this._arguments, query_obj);
+        }
+    }, {
+        key: 'setType',
+        value: function setType(type) {
+            this._return_type = type;
+            return this;
+        }
+    }, {
+        key: 'getType',
+        value: function getType() {
+            return this._return_type;
         }
     }, {
         key: 'needsGroup',

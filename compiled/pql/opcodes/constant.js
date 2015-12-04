@@ -36,6 +36,7 @@ var CONSTANT = (function (_OPCODE) {
         key: 'setForceNumeric',
         value: function setForceNumeric(force) {
             this._force_numeric = !!force;
+            return this;
         }
     }, {
         key: 'getValue',

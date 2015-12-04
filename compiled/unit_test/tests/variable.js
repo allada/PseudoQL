@@ -43,7 +43,7 @@ window.QUnit.test('Variable 4', function (assert) {
       amt: 3
     }
   });
-  assert.ok(query.replace(/\s+/g, ' ') === 'SELECT * FROM "TablE1" GROUP BY "TablE1"."id" HAVING "TablE1"."id" IS NULL OR COUNT(IFNULL("TablE1"."id", \'1\')) > \'3\'', "Passed!");
+  assert.ok(query.replace(/\s+/g, ' ') === 'SELECT * FROM "TablE1" GROUP BY "TablE1"."id" HAVING "TablE1"."id" IS NULL OR COUNT(IFNULL("TablE1"."id", \'1\')) > 3', "Passed!");
 });
 window.QUnit.test('Variable 5', function (assert) {
   var query = _pqlPQLJs.PQL.getSQL({
@@ -55,7 +55,7 @@ window.QUnit.test('Variable 5', function (assert) {
       amt: 3
     }
   });
-  assert.ok(query.replace(/\s+/g, ' ') === 'SELECT * FROM "TablE1" GROUP BY "TablE1"."id" HAVING ( "TablE1"."id" IS NULL OR COUNT(IFNULL("TablE1"."id", \'1\')) > \'3\' ) IF(COUNT(\'4\') > \'-009\', \'3\', NULL)', "Passed!");
+  assert.ok(query.replace(/\s+/g, ' ') === 'SELECT * FROM "TablE1" GROUP BY "TablE1"."id" HAVING ( "TablE1"."id" IS NULL OR COUNT(IFNULL("TablE1"."id", \'1\')) > 3 ) IF(COUNT(\'4\') > -009, \'3\', NULL)', "Passed!");
 });
 window.QUnit.test('Variable 6', function (assert) {
   var query = _pqlPQLJs.PQL.getSQL({
@@ -65,7 +65,7 @@ window.QUnit.test('Variable 6', function (assert) {
       id: 0
     }
   });
-  assert.ok(query.replace(/\s+/g, ' ') === 'SELECT * FROM "TablE1" WHERE "TablE1"."id" = 3 GROUP BY "TablE1"."id" HAVING \'7\' = COUNT(\'0\')', "Passed!");
+  assert.ok(query.replace(/\s+/g, ' ') === 'SELECT * FROM "TablE1" WHERE "TablE1"."id" = 3 GROUP BY "TablE1"."id" HAVING 7 = COUNT(\'0\')', "Passed!");
 });
 window.QUnit.test('Variable 7', function (assert) {
   var query = _pqlPQLJs.PQL.getSQL({

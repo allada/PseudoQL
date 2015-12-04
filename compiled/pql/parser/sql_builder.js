@@ -21,6 +21,7 @@ var SQL_BUILDER = (function () {
         var orderBys = _ref.orderBys;
         var limit = _ref.limit;
         var offset = _ref.offset;
+        var variables = _ref.variables;
 
         _classCallCheck(this, SQL_BUILDER);
 
@@ -31,6 +32,7 @@ var SQL_BUILDER = (function () {
         this._orderBys = orderBys;
         this._limit = limit;
         this._offset = offset;
+        this._variables = variables;
 
         this._table_refs = new Map();
         this._linked_tables = [];
@@ -76,6 +78,11 @@ var SQL_BUILDER = (function () {
         key: 'getOffset',
         value: function getOffset() {
             return this._offset;
+        }
+    }, {
+        key: 'getVariables',
+        value: function getVariables() {
+            return this._variables;
         }
     }, {
         key: 'toString',
@@ -223,7 +230,7 @@ var SQL_BUILDER = (function () {
             }
 
             // Pop last item off the array and clone it so it doesn't count itself
-            var parser = new _parserJs.PARSER(link_obj.pql, this.getTable(), false, this.getQuery().getConfig(), table_ary.slice(0, table_ary.length - 1));
+            var parser = new _parserJs.PARSER(link_obj.pql, this.getTable(), false, this.getQuery().getConfig(), table_ary.slice(0, table_ary.length - 1), this.getVariables(), true);
             // This needs to happen here to ensure the tables get added in the proper order
             parser.getCodes().getSQL(this);
 

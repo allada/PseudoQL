@@ -41,6 +41,12 @@ var COMPARITOR = (function (_OPCODE) {
             return this;
         }
     }, {
+        key: 'setNeedsWrapped',
+        value: function setNeedsWrapped(val) {
+            this._needs_wrapped = val;
+            return this;
+        }
+    }, {
         key: 'needsGroup',
         value: function needsGroup() {
             if (this._needs_group_cache !== null) {
