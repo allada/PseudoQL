@@ -1,10 +1,12 @@
 import { OPCODE } from './opcode.js';
+import { DATA_TYPES } from '../data_types.js';
 
 export class FUNCTION extends OPCODE {
     constructor (pql_obj, fn_name) {
         super(pql_obj, fn_name);
 
         this._needs_group_cache = null;
+        this._return_type = null;
         this.setFunctionName(fn_name);
     }
     setArgs (args) {
@@ -31,6 +33,7 @@ export class FUNCTION extends OPCODE {
             throw `Function '${fn_name}' is not allowed or not defined`;
         }
         this._fn_settings = this.getPqlObj().getConfig().FUNCTION_MAP[fn_name];
+        this.setType(this._fn_settings.return_type || DATA_TYPES.ANY);
         this._fn_name = fn_name;
     }
     getFunctionSettings () {
@@ -43,6 +46,13 @@ export class FUNCTION extends OPCODE {
             args.push(v.getSQL(query_obj));
         });
         return this.buildFromFormat(this.getFormat(), args, this._arguments, query_obj);
+    }
+    setType (type) {
+        this._return_type = type;
+        return this;
+    }
+    getType () {
+        return this._return_type;
     }
     needsGroup () {
         if (this._needs_group_cache !== null) {

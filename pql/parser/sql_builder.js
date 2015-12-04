@@ -1,6 +1,6 @@
 import { PARSER } from './../parser.js';
 export class SQL_BUILDER {
-    constructor ({ query, table, group, selects, orderBys, limit, offset }) {
+    constructor ({ query, table, group, selects, orderBys, limit, offset, variables }) {
         this._query = query;
         this._table = table;
         this._group = group;
@@ -8,6 +8,7 @@ export class SQL_BUILDER {
         this._orderBys = orderBys;
         this._limit = limit;
         this._offset = offset;
+        this._variables = variables;
 
         this._table_refs = new Map;
         this._linked_tables = [];
@@ -36,6 +37,9 @@ export class SQL_BUILDER {
     }
     getOffset () {
         return this._offset;
+    }
+    getVariables () {
+        return this._variables;
     }
     toString () {
         let query_str = this.getQuery().getWhereCodes().getSQL(this);
@@ -133,7 +137,7 @@ export class SQL_BUILDER {
         }
 
         // Pop last item off the array and clone it so it doesn't count itself
-        let parser = new PARSER(link_obj.pql, this.getTable(), false, this.getQuery().getConfig(), table_ary.slice(0, table_ary.length - 1));
+        let parser = new PARSER(link_obj.pql, this.getTable(), false, this.getQuery().getConfig(), table_ary.slice(0, table_ary.length - 1), this.getVariables(), true);
         // This needs to happen here to ensure the tables get added in the proper order
         parser.getCodes().getSQL(this);
         
