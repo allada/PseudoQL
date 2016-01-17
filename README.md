@@ -1,7 +1,7 @@
 # PseudoQL (PQL)
 PseudoQL is a Pseudo-Query-Language.
 
-Live Demo: http://allada.github.io/PseudoQL/ (Currently traceur has a bug in it and cannot be demo'd... Will fix soon)
+Live Demo: http://allada.github.io/PseudoQL/
 
 ###PseudoQL goals:###
 - Make it easier and faster to develop for relational databases.
